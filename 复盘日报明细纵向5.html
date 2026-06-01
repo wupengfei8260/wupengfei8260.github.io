@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>复盘日报 - 列表式展开</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #F5F7FB;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 430px;
+            min-height: 100vh;
+            background: #FFFFFF;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .main-content {
+            padding: 20px 16px 40px 16px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 12px 0 16px 0;
+            border-bottom: 1px solid #EEF2F6;
+            margin-bottom: 16px;
+        }
+        .title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1E2A3A;
+            letter-spacing: -0.3px;
+        }
+        .date-today {
+            font-size: 15px;
+            font-weight: 500;
+            color: #8E9AAB;
+            background: #F5F7FB;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* 指标列表 - 上下排列 */
+        .metrics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .metric-item {
+            background: #F8F9FC;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+            border: 1px solid #EEF2F8;
+            overflow: hidden;
+        }
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            cursor: pointer;
+            background: #F8F9FC;
+        }
+        .metric-header:active {
+            background: #EFF2F8;
+        }
+        .metric-info {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        /* 指标名称固定宽度，实现右侧数字对齐 */
+        .metric-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1E2A3A;
+            width: 88px;
+            flex-shrink: 0;
+        }
+        .metric-count {
+            font-size: 14px;
+            font-weight: 600;
+            color: #E86A2C;
+            background: rgba(232, 106, 44, 0.1);
+            padding: 2px 10px;
+            border-radius: 20px;
+            min-width: 48px;
+            text-align: center;
+        }
+        .expand-icon {
+            font-size: 20px;
+            color: #8E9AAB;
+            transition: transform 0.2s;
+            font-weight: 400;
+            width: 28px;
+            text-align: center;
+        }
+        .metric-item.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+        .metric-item.expanded .metric-header {
+            border-bottom: 1px solid #E9EDF4;
+        }
+
+        /* 明细内容区域 */
+        .metric-detail {
+            display: none;
+            padding: 16px;
+            background: #FFFFFF;
+            border-top: 1px solid #EFF2F8;
+        }
+        .metric-item.expanded .metric-detail {
+            display: block;
+        }
+
+        /* 统计卡片（顶部汇总区域）- 子指标左右对齐 */
+        .stats-summary {
+            background: #F8F9FE;
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #EDF1F8;
+        }
+        .stat-item {
+            flex: 1;
+            min-width: 70px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #7F8C9B;
+            margin-bottom: 4px;
+        }
+        .stat-number {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1E2A3A;
+            line-height: 1.2;
+        }
+
+        /* 明细卡片 */
+        .detail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .record-card {
+            background: #FFFFFF;
+            border: 1px solid #EFF2F8;
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+        }
+        .field-row {
+            margin-bottom: 10px;
+            line-height: 1.4;
+            font-size: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+        }
+        .field-row:last-child {
+            margin-bottom: 0;
+        }
+        .field-label {
+            color: #8E9AAB;
+            font-weight: 400;
+            margin-right: 8px;
+            width: 56px;
+            flex-shrink: 0;
+        }
+        .field-value {
+            color: #1E2A3A;
+            font-weight: 500;
+            word-break: break-word;
+            flex: 1;
+        }
+        .address-value {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        /* 联系方式区域 */
+        .contact-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #FBFCFE;
+            padding: 8px 12px;
+            border-radius: 14px;
+            margin: 8px 0 12px 0;
+        }
+        .contact-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .contact-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2C3E4E;
+        }
+        .phone-number {
+            font-size: 14px;
+            font-family: monospace;
+            letter-spacing: 0.5px;
+            color: #2C3E4E;
+        }
+        .eye-icon {
+            font-size: 18px;
+            cursor: pointer;
+            user-select: none;
+            line-height: 1;
+            opacity: 0.5;
+            transition: opacity 0.1s;
+            margin-left: 4px;
+        }
+        .eye-icon:active {
+            opacity: 0.3;
+        }
+        .call-icon {
+            background: #EFF3FA;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: #1E6F5C;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+        .call-icon:active {
+            background: #1E6F5C;
+            color: white;
+            transform: scale(0.95);
+        }
+        /* 单号可点击样式 - 保持原样式，无下划线等特效 */
+        .tracking-clickable {
+            cursor: pointer;
+            transition: opacity 0.2s;
+            display: inline-block;
+        }
+        .tracking-clickable:active {
+            opacity: 0.6;
+        }
+        .type-tag {
+            background: #F5F7FB;
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+            color: #1E2A3A;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 32px 20px;
+            background: #FBFCFE;
+            border-radius: 16px;
+            color: #9AA6B9;
+            font-size: 13px;
+        }
+        .jump-link {
+            color: #1E6F5C;
+            font-weight: 500;
+            text-decoration: none;
+            background: #EFF8F5;
+            padding: 8px 16px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        /* 动态创建的物流详情页样式 */
+        .dynamic-detail-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #F5F7FB;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            width: 100%;
+            max-width: 430px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+        }
+        .dynamic-detail-page.show {
+            transform: translateX(0);
+        }
+        .detail-header {
+            background: #1E6F5C;
+            color: white;
+            padding: 20px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            color: white;
+        }
+        .detail-title {
+            font-size: 18px;
+            font-weight: 600;
+            flex: 1;
+        }
+        .detail-scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .detail-card {
+            background: white;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .detail-card:last-child {
+            margin-bottom: 0;
+        }
+        .detail-field-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            padding: 10px 0;
+            border-bottom: 1px solid #EEF2F6;
+        }
+        .detail-field-row:last-child {
+            border-bottom: none;
+        }
+        .detail-field-label {
+            color: #8E9AAB;
+            font-size: 14px;
+            margin-right: 12px;
+            min-width: 56px;
+        }
+        .detail-field-value {
+            font-weight: 500;
+            color: #1E2A3A;
+            flex: 1;
+            word-break: break-word;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .timeline-node {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-left: 2px solid #E9EDF4;
+            margin-left: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -5px;
+            top: 16px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #1E6F5C;
+        }
+        .timeline-time {
+            font-size: 12px;
+            color: #8E9AAB;
+            min-width: 70px;
+        }
+        .timeline-desc {
+            font-size: 14px;
+            color: #1E2A3A;
+        }
+        .section-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 15px;
+            color: #1E2A3A;
+        }
+        .call-icon-small {
+            background: #EFF3FA;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: #1E6F5C;
+            transition: 0.2s;
+        }
+        .call-icon-small:active {
+            background: #1E6F5C;
+            color: white;
+            transform: scale(0.95);
+        }
+        .detail-eye-icon {
+            font-size: 18px;
+            cursor: pointer;
+            user-select: none;
+            line-height: 1;
+            opacity: 0.5;
+            transition: opacity 0.1s;
+        }
+        .detail-eye-icon:active {
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="main-content">
+        <div class="header">
+            <div class="title">复盘日报</div>
+            <div class="date-today" id="dateDisplay">05/28</div>
+        </div>
+
+        <!-- 指标列表容器 -->
+        <div class="metrics-list" id="metricsList"></div>
+    </div>
+</div>
+
+<script>
+    // 移除固定号码，电话按钮不再绑定任何拨号动作（仅保留图标占位）
+    
+    // 单号前缀规则
+    const prefixes = ['320', '43', '46', '312'];
+    function generateTrackingNo() {
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const remainingLen = 15 - prefix.length;
+        let suffix = '';
+        for (let i = 0; i < remainingLen; i++) {
+            suffix += Math.floor(Math.random() * 10);
+        }
+        return prefix + suffix;
+    }
+
+    function ensureTrackingNumbers(detailsArray) {
+        if (!detailsArray) return;
+        detailsArray.forEach(item => {
+            if (!item.trackingNo || item.trackingNo.length !== 15 || !/^\d+$/.test(item.trackingNo)) {
+                item.trackingNo = generateTrackingNo();
+            } else {
+                const prefixValid = prefixes.some(p => item.trackingNo.startsWith(p));
+                if (!prefixValid || item.trackingNo.length !== 15) {
+                    item.trackingNo = generateTrackingNo();
+                }
+            }
+        });
+    }
+
+    // 保留 makePhoneCall 但不再被主界面的按钮调用（物流详情页仍会使用）
+    function makePhoneCall(phoneNumber) {
+        if (!phoneNumber) {
+            alert("号码无效");
+            return;
+        }
+        window.location.href = `tel:${phoneNumber}`;
+    }
+
+    function maskName(name) {
+        if (!name) return '';
+        if (name.length <= 2) return name.charAt(0) + '*';
+        return name.charAt(0) + '**';
+    }
+
+    function maskPhone(phone) {
+        if (!phone) return '';
+        return phone.slice(0,3) + '****' + phone.slice(-4);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // ==================== 动态物流详情页 ====================
+    let currentDetailPage = null;
+    let currentDetailPlainMap = { sender: false, receiver: false };
+
+    function renderTrackDetail(trackingNo, itemData, container) {
+        const senderName = itemData.senderName || "张明";
+        const senderPhone = itemData.senderPhone || "13812345678";
+        const receiverName = itemData.name || "李芳";
+        const receiverPhone = itemData.phone || "15987654321";
+        const address = itemData.address || "未知地址";
+        
+        const detailData = {
+            trackingNo,
+            sender: { name: senderName, phone: senderPhone, address: "浙江省杭州市西湖区文三路100号" },
+            receiver: { name: receiverName, phone: receiverPhone, address: address },
+            timeline: [
+                { time: "2026-05-29 09:20:00", status: `【${address.substring(0,6)}】快件正在派送中，预计今日送达` },
+                { time: "2026-05-28 08:30:22", status: "【杭州市】快件已到达杭州萧山转运中心" },
+                { time: "2026-05-28 06:15:10", status: "【杭州市】快件已从杭州西湖营业部发出" },
+                { time: "2026-05-27 22:40:05", status: "【杭州市】快件已揽收，揽收员【张师傅】" }
+            ]
+        };
+        
+        const isSenderPlain = currentDetailPlainMap.sender;
+        const isReceiverPlain = currentDetailPlainMap.receiver;
+        const displaySenderName = isSenderPlain ? detailData.sender.name : maskName(detailData.sender.name);
+        const displaySenderPhone = isSenderPlain ? detailData.sender.phone : maskPhone(detailData.sender.phone);
+        const displayReceiverName = isReceiverPlain ? detailData.receiver.name : maskName(detailData.receiver.name);
+        const displayReceiverPhone = isReceiverPlain ? detailData.receiver.phone : maskPhone(detailData.receiver.phone);
+        
+        container.innerHTML = `
+            <div class="detail-header">
+                <button class="back-btn" id="dynamicCloseBtn">←</button>
+                <div class="detail-title">物流详情</div>
+                <div style="width: 36px;"></div>
+            </div>
+            <div class="detail-scroll-content">
+                <div class="detail-card">
+                    <div class="detail-field-row">
+                        <span class="detail-field-label">运单号</span>
+                        <span class="detail-field-value">${detailData.trackingNo}</span>
+                    </div>
+                </div>
+                <div class="detail-card">
+                    <div class="section-title">📦 寄件人信息</div>
+                    <div class="detail-field-row">
+                        <span class="detail-field-label">姓名</span>
+                        <span class="detail-field-value">
+                            ${displaySenderName}
+                            <span class="detail-eye-icon" data-type="sender">👁</span>
+                        </span>
+                    </div>
+                    <div class="detail-field-row">
+                        <span class="detail-field-label">电话</span>
+                        <span class="detail-field-value">
+                            ${displaySenderPhone}
+                            <button class="call-icon-small" data-phone="${detailData.sender.phone}">📞</button>
+                        </span>
+                    </div>
+                    <div class="detail-field-row">
+                        <span class="detail-field-label">地址</span>
+                        <span class="detail-field-value">${detailData.sender.address}</span>
+                    </div>
+                </div>
+                <div class="detail-card">
+                    <div class="section-title">🏠 收件人信息</div>
+                    <div class="detail-field-row">
+                        <span class="detail-field-label">姓名</span>
+                        <span class="detail-field-value">
+                            ${displayReceiverName}
+                            <span class="detail-eye-icon" data-type="receiver">👁</span>
+                        </span>
+                    </div>
+                    <div class="detail-field-row">
+                        <span class="detail-field-label">电话</span>
+                        <span class="detail-field-value">
+                            ${displayReceiverPhone}
+                            <button class="call-icon-small" data-phone="${detailData.receiver.phone}">📞</button>
+                        </span>
+                    </div>
+                    <div class="detail-field-row">
+                        <span class="detail-field-label">地址</span>
+                        <span class="detail-field-value">${detailData.receiver.address}</span>
+                    </div>
+                </div>
+                <div class="detail-card">
+                    <div class="section-title">📋 物流轨迹</div>
+                    ${detailData.timeline.map(node => `
+                        <div class="timeline-node">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-time">${node.time}</div>
+                            <div class="timeline-desc">${node.status}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        
+        // 绑定小眼睛事件
+        container.querySelectorAll('.detail-eye-icon').forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const type = icon.getAttribute('data-type');
+                if (type === 'sender') {
+                    currentDetailPlainMap.sender = !currentDetailPlainMap.sender;
+                } else if (type === 'receiver') {
+                    currentDetailPlainMap.receiver = !currentDetailPlainMap.receiver;
+                }
+                renderTrackDetail(trackingNo, itemData, container);
+            });
+        });
+        
+        // 绑定拨号按钮（物流详情页内使用真实号码）
+        container.querySelectorAll('.call-icon-small').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const phone = btn.getAttribute('data-phone');
+                if (phone) makePhoneCall(phone);
+            });
+        });
+        
+        // 绑定关闭按钮
+        const closeBtn = container.querySelector('#dynamicCloseBtn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                closeTrackDetail();
+            });
+        }
+    }
+    
+    function showTrackDetail(trackingNo, itemData) {
+        if (currentDetailPage) {
+            closeTrackDetail();
+        }
+        
+        currentDetailPage = document.createElement('div');
+        currentDetailPage.className = 'dynamic-detail-page';
+        document.body.appendChild(currentDetailPage);
+        
+        currentDetailPlainMap = { sender: false, receiver: false };
+        renderTrackDetail(trackingNo, itemData, currentDetailPage);
+        
+        setTimeout(() => {
+            currentDetailPage.classList.add('show');
+        }, 10);
+    }
+
+    function closeTrackDetail() {
+        if (currentDetailPage) {
+            currentDetailPage.classList.remove('show');
+            setTimeout(() => {
+                if (currentDetailPage && currentDetailPage.parentNode) {
+                    currentDetailPage.parentNode.removeChild(currentDetailPage);
+                }
+                currentDetailPage = null;
+            }, 300);
+        }
+    }
+
+    // ==================== 模拟数据 ====================
+    const timeoutPickupData = {
+        count: 8,
+        details: [
+            { address: "阳光花园12栋304室", name: "张明", phone: "13812345678", trackingNo: "320123456789012" },
+            { address: "香榭丽都B座2102", name: "李芳", phone: "15987654321", trackingNo: "431234567890123" },
+            { address: "滨江公馆3单元806", name: "王磊", phone: "18765432109", trackingNo: "461234567890123" },
+            { address: "龙湖天街7-105", name: "赵欣然", phone: "15233447788", trackingNo: "312123456789012" },
+            { address: "万达华府5-202", name: "刘洋", phone: "13912345678", trackingNo: "320987654321098" },
+            { address: "绿地世纪城18-304", name: "陈晨", phone: "15812345678", trackingNo: "438765432109876" }
+        ]
+    };
+    const notPickedData = {
+        count: 5,
+        details: [
+            { address: "翠湖天地9栋105", name: "陈敏", phone: "15233445566", trackingNo: "320987654321098" },
+            { address: "世纪新城22-1104", name: "赵敏", phone: "17788990011", trackingNo: "438765432109876" },
+            { address: "蓝湾国际3-202", name: "孙丽", phone: "18812345678", trackingNo: "467654321098765" },
+            { address: "保利花园8-503", name: "周杰", phone: "15012345678", trackingNo: "312998877665544" }
+        ]
+    };
+    const fakeSignData = {
+        fakeCount: 12,
+        totalSignCount: 436,
+        fakeRate: "2.75",
+        details: [
+            { trackingNo: "320556677889901", signTime: "2026/05/28 14:23:10", complaintType: "客户投诉", signType: "驿站类", signContent: "宝龙城市广场站点" },
+            { trackingNo: "431122334455667", signTime: "2026/05/27 09:45:33", complaintType: "客户投诉", signType: "驿站类", signContent: "宝龙城市广场站点" },
+            { trackingNo: "462233445566778", signTime: "2026/05/26 18:12:07", complaintType: "服务体验", signType: "代收点类", signContent: "宝龙城市广场站点" },
+            { trackingNo: "312998877665544", signTime: "2026/05/25 11:30:22", complaintType: "客户投诉", signType: "驿站类", signContent: "宝龙城市广场站点" }
+        ]
+    };
+    const lostData = {
+        count: 3,
+        details: [
+            { trackingNo: "320901234567890", dispatchTime: "2026/05/25 10:30:22", lostSource: "操作仲裁", respLink: "派送无签收", penalty: 20 },
+            { trackingNo: "431234567890123", dispatchTime: "2026/05/24 16:45:00", lostSource: "客户投诉", respLink: "中转异常", penalty: 50 },
+            { trackingNo: "463344556677889", dispatchTime: "2026/05/23 08:20:15", lostSource: "操作仲裁", respLink: "派送无签收", penalty: 20 }
+        ]
+    };
+    const brokenData = {
+        count: 4,
+        details: [
+            { trackingNo: "312112233445566", dispatchTime: "2026/05/27 11:15:40", brokenSource: "仲裁", respLink: "签收后异常", penalty: 20 },
+            { trackingNo: "320998877665544", dispatchTime: "2026/05/26 09:50:12", brokenSource: "客户反馈", respLink: "包装破损", penalty: 30 },
+            { trackingNo: "435566778899001", dispatchTime: "2026/05/25 14:20:05", brokenSource: "仲裁", respLink: "签收后异常", penalty: 20 }
+        ]
+    };
+    const sixDaysNoOutData = { count: 2, isJump: true };
+    const noCallData = {
+        shouldCall: 124, called: 98, notCalled: 26, callRate: "79.0",
+        details: [
+            { trackingNo: "320556677889900", dispatchTime: "2026/05/28 08:00:00", signTime: "2026/05/28 19:30:00", signPerson: "本人", typeTag: "客户声音" },
+            { trackingNo: "439988776655443", dispatchTime: "2026/05/27 14:20:00", signTime: "2026/05/27 20:15:00", signPerson: "家人代收", typeTag: "智橙网" },
+            { trackingNo: "461122334455667", dispatchTime: "2026/05/26 11:45:00", signTime: "2026/05/26 17:00:00", signPerson: "本人", typeTag: "客户声音" }
+        ]
+    };
+    const noDoorData = {
+        shouldDoor: 210, doneDoor: 182, notDoor: 28, doorRate: "86.7",
+        details: [
+            { trackingNo: "312776655443322", dispatchTime: "2026/05/28 09:10:00", signTime: "2026/05/28 18:45:00", signPerson: "本人", typeTag: "智橙网" },
+            { trackingNo: "320665544332211", dispatchTime: "2026/05/27 13:30:00", signTime: "2026/05/27 21:00:00", signPerson: "驿站代收", typeTag: "客户声音" },
+            { trackingNo: "438899001122334", dispatchTime: "2026/05/26 10:15:00", signTime: "2026/05/26 16:30:00", signPerson: "本人", typeTag: "客户声音" }
+        ]
+    };
+
+    [timeoutPickupData, notPickedData, fakeSignData, lostData, brokenData, noCallData, noDoorData].forEach(ref => {
+        if (ref.details) ensureTrackingNumbers(ref.details);
+    });
+
+    const metricsData = [
+        { id: "timeout", label: "超时揽收", dataRef: timeoutPickupData, detailType: "addressPhone" },
+        { id: "notPicked", label: "未取件", dataRef: notPickedData, detailType: "addressPhone" },
+        { id: "fakeSign", label: "虚假签收", dataRef: fakeSignData, hasTopStats: true, statsKeys: ["fakeCount","totalSignCount","fakeRate"], statsLabels: ["虚假签收量","签收总量","虚假签收率"], detailType: "fakeDetail" },
+        { id: "lost", label: "遗失", dataRef: lostData, detailType: "lostBrokenDetail" },
+        { id: "broken", label: "破损", dataRef: brokenData, detailType: "lostBrokenDetail" },
+        { id: "sixDays", label: "6天未出库", dataRef: sixDaysNoOutData, detailType: "jump" },
+        { id: "noCall", label: "未电联", dataRef: noCallData, hasTopStats: true, statsKeys: ["shouldCall","called","notCalled","callRate"], statsLabels: ["应电联量","已电联量","未电联量","电联率"], detailType: "callDoorDetail" },
+        { id: "noDoor", label: "未上门", dataRef: noDoorData, hasTopStats: true, statsKeys: ["shouldDoor","doneDoor","notDoor","doorRate"], statsLabels: ["应上门量","已上门量","未上门量","上门率"], detailType: "callDoorDetail" }
+    ];
+
+    let expandedMetricId = null;
+    let plainTextMap = new Map();
+
+    function renderDate() {
+        document.getElementById('dateDisplay').innerText = "05/28";
+    }
+
+    function getMetricDisplayCount(metric) {
+        const ref = metric.dataRef;
+        if (metric.id === 'sixDays') return ref.count;
+        if (metric.id === 'fakeSign') return ref.fakeCount;
+        if (metric.id === 'noCall') return ref.notCalled;
+        if (metric.id === 'noDoor') return ref.notDoor;
+        if (ref.count !== undefined) return ref.count;
+        if (ref.details) return ref.details.length;
+        return 0;
+    }
+
+    function renderDetailContent(metric) {
+        const ref = metric.dataRef;
+        
+        if (metric.id === 'sixDays') {
+            return `<div class="empty-state">暂无明细数据<div class="jump-link" data-jump="${metric.id}">📋 跳转到现有功能列表</div></div>`;
+        }
+        
+        let topStatsHtml = '';
+        if (metric.hasTopStats && metric.statsKeys) {
+            const statsHtmlArr = [];
+            for(let i=0; i<metric.statsKeys.length; i++) {
+                let val = ref[metric.statsKeys[i]];
+                let isRate = (metric.statsKeys[i] === 'fakeRate' || metric.statsKeys[i] === 'callRate' || metric.statsKeys[i] === 'doorRate');
+                let displayVal = isRate ? val + '%' : val;
+                statsHtmlArr.push(`
+                    <div class="stat-item">
+                        <div class="stat-label">${metric.statsLabels[i]}</div>
+                        <div class="stat-number">${displayVal}</div>
+                    </div>
+                `);
+            }
+            topStatsHtml = `<div class="stats-summary">${statsHtmlArr.join('')}</div>`;
+        }
+        
+        const details = ref.details || [];
+        let cardsHtml = '<div class="detail-list">';
+        
+        if (metric.detailType === 'addressPhone') {
+            details.forEach((item, idx) => {
+                const mapKey = `${metric.id}_${idx}`;
+                const isPlain = plainTextMap.get(mapKey) || false;
+                const displayName = isPlain ? item.name : maskName(item.name);
+                const displayPhone = isPlain ? item.phone : maskPhone(item.phone);
+                cardsHtml += `
+                    <div class="record-card">
+                        <div class="field-row">
+                            <span class="field-value address-value">${escapeHtml(item.address)}</span>
+                        </div>
+                        <div class="contact-row">
+                            <div class="contact-info">
+                                <span class="contact-name">${displayName}</span>
+                                <span class="phone-number">${displayPhone}</span>
+                                <span class="eye-icon" data-metric="${metric.id}" data-idx="${idx}">👁</span>
+                            </div>
+                            <!-- 电话按钮仅作展示，无拨号功能 -->
+                            <button class="call-icon" style="opacity:0.4; cursor:default;" disabled>📞</button>
+                        </div>
+                        <div class="field-row">
+                            <span class="field-label">运单号</span>
+                            <span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}" data-address="${escapeHtml(item.address)}" data-name="${item.name}" data-phone="${item.phone}">${item.trackingNo}</span></span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        else if (metric.detailType === 'fakeDetail') {
+            details.forEach(item => {
+                cardsHtml += `
+                    <div class="record-card">
+                        <div class="field-row"><span class="field-label">单号</span><span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}">${item.trackingNo}</span></span></div>
+                        <div class="field-row"><span class="field-label">签收时间</span><span class="field-value">${item.signTime}</span></div>
+                        <div class="field-row"><span class="field-label">投诉类型</span><span class="field-value">${item.complaintType}</span></div>
+                        <div class="field-row"><span class="field-label">签收类型</span><span class="field-value">${item.signType}</span></div>
+                        <div class="field-row"><span class="field-label">签收内容</span><span class="field-value">${item.signContent}</span></div>
+                    </div>
+                `;
+            });
+        }
+        else if (metric.detailType === 'lostBrokenDetail') {
+            const isLost = metric.id === 'lost';
+            details.forEach(item => {
+                cardsHtml += `
+                    <div class="record-card">
+                        <div class="field-row"><span class="field-label">单号</span><span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}">${item.trackingNo}</span></span></div>
+                        <div class="field-row"><span class="field-label">分发时间</span><span class="field-value">${item.dispatchTime}</span></div>
+                        <div class="field-row"><span class="field-label">${isLost ? '遗失来源' : '破损来源'}</span><span class="field-value">${isLost ? item.lostSource : item.brokenSource}</span></div>
+                        <div class="field-row"><span class="field-label">责任环节</span><span class="field-value">${item.respLink}</span></div>
+                        <div class="field-row"><span class="field-label">考核金额(元)</span><span class="field-value">${item.penalty}</span></div>
+                    </div>
+                `;
+            });
+        }
+        else if (metric.detailType === 'callDoorDetail') {
+            details.forEach(item => {
+                cardsHtml += `
+                    <div class="record-card">
+                        <div class="field-row"><span class="field-label">单号</span><span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}">${item.trackingNo}</span></span></div>
+                        <div class="field-row"><span class="field-label">分发时间</span><span class="field-value">${item.dispatchTime}</span></div>
+                        <div class="field-row"><span class="field-label">签收时间</span><span class="field-value">${item.signTime}</span></div>
+                        <div class="field-row"><span class="field-label">签收人</span><span class="field-value">${item.signPerson}</span></div>
+                        <div class="field-row"><span class="field-label">类型</span><span class="field-value"><span class="type-tag">${item.typeTag}</span></span></div>
+                    </div>
+                `;
+            });
+        }
+        
+        cardsHtml += '</div>';
+        if (details.length === 0 && metric.id !== 'sixDays') cardsHtml = '<div class="empty-state">暂无明细数据</div>';
+        
+        return topStatsHtml + cardsHtml;
+    }
+
+    function renderMetricsList() {
+        const container = document.getElementById('metricsList');
+        container.innerHTML = '';
+        
+        metricsData.forEach(metric => {
+            const countVal = getMetricDisplayCount(metric);
+            const isExpanded = (expandedMetricId === metric.id);
+            const itemDiv = document.createElement('div');
+            itemDiv.className = `metric-item ${isExpanded ? 'expanded' : ''}`;
+            itemDiv.dataset.metricId = metric.id;
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'metric-header';
+            headerDiv.innerHTML = `
+                <div class="metric-info">
+                    <span class="metric-name">${metric.label}</span>
+                    <span class="metric-count">${countVal}</span>
+                </div>
+                <span class="expand-icon">⌵</span>
+            `;
+            
+            const detailDiv = document.createElement('div');
+            detailDiv.className = 'metric-detail';
+            detailDiv.innerHTML = renderDetailContent(metric);
+            
+            itemDiv.appendChild(headerDiv);
+            itemDiv.appendChild(detailDiv);
+            container.appendChild(itemDiv);
+            
+            headerDiv.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (expandedMetricId === metric.id) {
+                    expandedMetricId = null;
+                } else {
+                    expandedMetricId = metric.id;
+                }
+                renderMetricsList();
+            });
+        });
+        
+        bindDynamicEvents();
+    }
+    
+    function bindDynamicEvents() {
+        document.querySelectorAll('.eye-icon').forEach(icon => {
+            icon.removeEventListener('click', icon._handler);
+            const handler = (e) => {
+                e.stopPropagation();
+                const metricId = icon.getAttribute('data-metric');
+                const idx = parseInt(icon.getAttribute('data-idx'));
+                const key = `${metricId}_${idx}`;
+                const current = plainTextMap.get(key) || false;
+                plainTextMap.set(key, !current);
+                renderMetricsList();
+            };
+            icon._handler = handler;
+            icon.addEventListener('click', handler);
+        });
+        
+        // 单号点击跳转物流详情
+        document.querySelectorAll('.tracking-clickable').forEach(el => {
+            el.removeEventListener('click', el._clickHandler);
+            const clickHandler = (e) => {
+                e.stopPropagation();
+                const trackingNo = el.getAttribute('data-tracking');
+                const address = el.getAttribute('data-address') || '';
+                const name = el.getAttribute('data-name') || '';
+                const phone = el.getAttribute('data-phone') || '';
+                showTrackDetail(trackingNo, { address, name, phone, senderName: "发件方", senderPhone: "13812345678" });
+            };
+            el._clickHandler = clickHandler;
+            el.addEventListener('click', clickHandler);
+        });
+        
+        // 跳转按钮
+        document.querySelectorAll('.jump-link').forEach(link => {
+            link.removeEventListener('click', link._handler);
+            const handler = (e) => {
+                e.stopPropagation();
+                alert("跳转至6天未出库功能列表页面");
+            };
+            link._handler = handler;
+            link.addEventListener('click', handler);
+        });
+    }
+
+    function init() {
+        renderDate();
+        renderMetricsList();
+    }
+    
+    init();
+</script>
+</body>
+</html>
