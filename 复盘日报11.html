@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>复盘日报 - 物流看板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #F5F7FB;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            background: #FFFFFF;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px 40px 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 12px 0 16px 0;
+            border-bottom: 1px solid #EEF2F6;
+            background: #FFFFFF;
+            flex-shrink: 0;
+        }
+        .title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1E2A3A;
+            letter-spacing: -0.3px;
+        }
+        .date-today {
+            font-size: 15px;
+            font-weight: 500;
+            color: #8E9AAB;
+            background: #F5F7FB;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* 指标滑动区域 */
+        .metrics-slider-container {
+            position: relative;
+            margin: 16px 0 12px 0;
+            flex-shrink: 0;
+        }
+        .metrics-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .metrics-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .metrics-track {
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+            padding: 4px 0;
+        }
+        .metrics-page {
+            flex-shrink: 0;
+            width: 100%;
+            scroll-snap-align: start;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .metric-card {
+            background: #F8F9FC;
+            border-radius: 14px;
+            padding: 10px 6px;
+            text-align: center;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow-x: hidden;
+            text-overflow: ellipsis;
+        }
+        .metric-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: #4A5B6E;
+            display: inline-block;
+        }
+        .metric-count-inline {
+            font-size: 13px;
+            font-weight: 600;
+            color: #E86A2C;
+            margin-left: 4px;
+            display: inline-block;
+        }
+        .metric-card.active {
+            background: #1E6F5C;
+            border-color: #1E6F5C;
+        }
+        .metric-card.active .metric-text {
+            color: white;
+        }
+        .metric-card.active .metric-count-inline {
+            color: rgba(255,255,255,0.9);
+        }
+        @media (max-width: 400px) {
+            .metric-text { font-size: 12px; }
+            .metric-count-inline { font-size: 12px; margin-left: 3px; }
+        }
+        @media (max-width: 370px) {
+            .metric-text { font-size: 11px; }
+            .metric-count-inline { font-size: 11px; }
+        }
+
+        .pagination-dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 4px 0;
+        }
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #CBD5E1;
+            transition: all 0.2s;
+        }
+        .dot.active {
+            width: 20px;
+            border-radius: 4px;
+            background: #1E6F5C;
+        }
+
+        .stats-summary {
+            background: #F8F9FE;
+            border-radius: 20px;
+            padding: 12px 14px;
+            margin: 8px 0 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #EDF1F8;
+            flex-shrink: 0;
+        }
+        .stat-item {
+            flex: 1;
+            min-width: 70px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #7F8C9B;
+            margin-bottom: 4px;
+        }
+        .stat-number {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1E2A3A;
+            line-height: 1.2;
+        }
+
+        .detail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 8px;
+            padding-bottom: 20px;
+        }
+        .record-card {
+            background: #FFFFFF;
+            border: 1px solid #EFF2F8;
+            border-radius: 20px;
+            padding: 14px 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+        .field-row {
+            margin-bottom: 10px;
+            line-height: 1.4;
+            font-size: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+        }
+        .field-row:last-child {
+            margin-bottom: 0;
+        }
+        .field-label {
+            color: #8E9AAB;
+            font-weight: 400;
+            margin-right: 8px;
+        }
+        .field-value {
+            color: #1E2A3A;
+            font-weight: 500;
+            word-break: break-word;
+            flex: 1;
+        }
+        .address-value {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .contact-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #FBFCFE;
+            padding: 8px 12px;
+            border-radius: 14px;
+            margin: 8px 0 12px 0;
+        }
+        .contact-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .contact-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2C3E4E;
+        }
+        .phone-number {
+            font-size: 14px;
+            font-family: monospace;
+            letter-spacing: 0.5px;
+            color: #2C3E4E;
+        }
+        .eye-icon {
+            font-size: 18px;
+            cursor: pointer;
+            user-select: none;
+            line-height: 1;
+            opacity: 0.5;
+            transition: opacity 0.1s;
+            margin-left: 4px;
+        }
+        .eye-icon:active {
+            opacity: 0.3;
+        }
+        .call-icon {
+            background: #EFF3FA;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: #1E6F5C;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+        .call-icon:active {
+            background: #1E6F5C;
+            color: white;
+            transform: scale(0.95);
+        }
+        /* 单号可点击样式 */
+        .tracking-clickable {
+            cursor: pointer;
+            transition: opacity 0.2s;
+            display: inline-block;
+        }
+        .tracking-clickable:active {
+            opacity: 0.6;
+        }
+        .type-tag {
+            background: #F5F7FB;
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+            color: #1E2A3A;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            background: #FBFCFE;
+            border-radius: 24px;
+            color: #9AA6B9;
+            font-size: 14px;
+        }
+        .jump-link {
+            color: #1E6F5C;
+            font-weight: 500;
+            text-decoration: none;
+            background: #EFF8F5;
+            padding: 8px 16px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-top: 12px;
+        }
+        .jump-link:active {
+            background: #D9EFEA;
+        }
+
+        /* 物流详情弹层/页面样式 (模拟新页面) */
+        .detail-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #F5F7FB;
+            z-index: 1000;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .detail-overlay.show {
+            transform: translateX(0);
+        }
+        .detail-header {
+            background: #1E6F5C;
+            color: white;
+            padding: 20px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            color: white;
+        }
+        .detail-title {
+            font-size: 18px;
+            font-weight: 600;
+            flex: 1;
+        }
+        .detail-card {
+            background: white;
+            margin: 16px;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #EEF2F6;
+        }
+        .info-label {
+            color: #8E9AAB;
+            font-size: 14px;
+        }
+        .info-value {
+            font-weight: 500;
+            color: #1E2A3A;
+        }
+        .timeline-node {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-left: 2px solid #E9EDF4;
+            margin-left: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -5px;
+            top: 16px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #1E6F5C;
+        }
+        .timeline-time {
+            font-size: 12px;
+            color: #8E9AAB;
+            min-width: 70px;
+        }
+        .timeline-desc {
+            font-size: 14px;
+            color: #1E2A3A;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="main-content">
+        <div class="header">
+            <div class="title">复盘日报</div>
+            <div class="date-today" id="dateDisplay">05/28</div>
+        </div>
+
+        <div class="metrics-slider-container">
+            <div class="metrics-scroll" id="metricsScroll">
+                <div class="metrics-track" id="metricsTrack"></div>
+            </div>
+            <div class="pagination-dots" id="paginationDots"></div>
+        </div>
+
+        <div id="detailPanel"></div>
+    </div>
+</div>
+
+<!-- 物流详情浮层 -->
+<div id="trackDetailOverlay" class="detail-overlay">
+    <div class="detail-header">
+        <button class="back-btn" id="closeDetailBtn">←</button>
+        <div class="detail-title">物流详情</div>
+        <div style="width: 36px;"></div>
+    </div>
+    <div id="trackDetailContent"></div>
+</div>
+
+<script>
+    // 已移除 DEFAULT_CALL_PHONE 固定号码，电话按钮不再绑定拨号
+    const prefixes = ['320', '43', '46', '312'];
+    function generateTrackingNo() {
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const remainingLen = 15 - prefix.length;
+        let suffix = '';
+        for (let i = 0; i < remainingLen; i++) suffix += Math.floor(Math.random() * 10);
+        return prefix + suffix;
+    }
+    function ensureTrackingNumbers(detailsArray) {
+        if (!detailsArray) return;
+        detailsArray.forEach(item => {
+            if (!item.trackingNo || item.trackingNo.length !== 15 || !/^\d+$/.test(item.trackingNo)) {
+                item.trackingNo = generateTrackingNo();
+            } else {
+                const prefixValid = prefixes.some(p => item.trackingNo.startsWith(p));
+                if (!prefixValid || item.trackingNo.length !== 15) item.trackingNo = generateTrackingNo();
+            }
+        });
+    }
+    // 保留 makePhoneCall 函数，但主界面不再调用（物流详情页内仍会使用真实号码）
+    function makePhoneCall(phoneNumber) {
+        if (!phoneNumber) { alert("号码无效"); return; }
+        window.location.href = `tel:${phoneNumber}`;
+    }
+    function maskName(name) {
+        if (!name) return '';
+        if (name.length <= 2) return name.charAt(0) + '*';
+        return name.charAt(0) + '**';
+    }
+    function maskPhone(phone) {
+        if (!phone) return '';
+        return phone.slice(0,3) + '****' + phone.slice(-4);
+    }
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : m === '>' ? '&gt;' : m);
+    }
+
+    // 模拟物流详情数据生成
+    function getMockLogisticDetail(trackingNo, senderName, senderPhone, receiverName, receiverPhone, currentAddress) {
+        const nodes = [
+            { time: "2026-05-28 08:30:22", status: "【杭州市】快件已到达杭州萧山转运中心" },
+            { time: "2026-05-28 06:15:10", status: "【杭州市】快件已从杭州西湖营业部发出" },
+            { time: "2026-05-27 22:40:05", status: "【杭州市】快件已揽收，揽收员【张师傅】" }
+        ];
+        if (Math.random() > 0.5) {
+            nodes.unshift({ time: "2026-05-29 09:20:00", status: `【${currentAddress.substring(0,6)}】快件正在派送中，预计今日送达` });
+        }
+        return {
+            trackingNo: trackingNo,
+            sender: { name: senderName || "张明", phone: senderPhone || "13812345678", address: "浙江省杭州市西湖区文三路100号" },
+            receiver: { name: receiverName || "李芳", phone: receiverPhone || "15987654321", address: currentAddress || "未知地址" },
+            currentStatus: "运输中",
+            timeline: nodes
+        };
+    }
+
+    // 展示物流详情浮层
+    function showTrackDetail(trackingNo, itemData) {
+        const overlay = document.getElementById('trackDetailOverlay');
+        const contentDiv = document.getElementById('trackDetailContent');
+        const senderName = itemData.senderName || "发件人";
+        const senderPhone = itemData.senderPhone || "13812345678";
+        const receiverName = itemData.name || "收件人";
+        const receiverPhone = itemData.phone || "15987654321";
+        const address = itemData.address || "未知地址";
+        const detail = getMockLogisticDetail(trackingNo, senderName, senderPhone, receiverName, receiverPhone, address);
+        
+        contentDiv.innerHTML = `
+            <div class="detail-card">
+                <div class="info-row"><span class="info-label">运单号</span><span class="info-value">${detail.trackingNo}</span></div>
+                <div class="info-row"><span class="info-label">当前状态</span><span class="info-value">${detail.currentStatus}</span></div>
+            </div>
+            <div class="detail-card">
+                <div style="font-weight:600; margin-bottom:12px;">📦 寄件人信息</div>
+                <div class="info-row"><span class="info-label">姓名</span><span class="info-value">${detail.sender.name}</span></div>
+                <div class="info-row"><span class="info-label">电话</span><span class="info-value">${detail.sender.phone} <button class="call-icon" style="display:inline-flex; width:28px; height:28px; margin-left:8px;" data-phone="${detail.sender.phone}">📞</button></span></div>
+                <div class="info-row"><span class="info-label">地址</span><span class="info-value">${detail.sender.address}</span></div>
+            </div>
+            <div class="detail-card">
+                <div style="font-weight:600; margin-bottom:12px;">🏠 收件人信息</div>
+                <div class="info-row"><span class="info-label">姓名</span><span class="info-value">${detail.receiver.name}</span></div>
+                <div class="info-row"><span class="info-label">电话</span><span class="info-value">${detail.receiver.phone} <button class="call-icon" style="display:inline-flex; width:28px; height:28px; margin-left:8px;" data-phone="${detail.receiver.phone}">📞</button></span></div>
+                <div class="info-row"><span class="info-label">地址</span><span class="info-value">${detail.receiver.address}</span></div>
+            </div>
+            <div class="detail-card">
+                <div style="font-weight:600; margin-bottom:12px;">📋 物流轨迹</div>
+                ${detail.timeline.map(node => `
+                    <div class="timeline-node">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-time">${node.time}</div>
+                        <div class="timeline-desc">${node.status}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        overlay.classList.add('show');
+        // 绑定详情页内的拨号按钮（使用真实号码）
+        contentDiv.querySelectorAll('.call-icon').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const phone = btn.getAttribute('data-phone');
+                if (phone) makePhoneCall(phone);
+            });
+        });
+    }
+
+    function closeTrackDetail() {
+        document.getElementById('trackDetailOverlay').classList.remove('show');
+    }
+
+    // 模拟数据
+    const timeoutPickupData = { count: 8, details: [{ address: "阳光花园12栋304室", name: "张明", phone: "13812345678", trackingNo: "320123456789012" }, { address: "香榭丽都B座2102", name: "李芳", phone: "15987654321", trackingNo: "431234567890123" }, { address: "滨江公馆3单元806", name: "王磊", phone: "18765432109", trackingNo: "461234567890123" }, { address: "龙湖天街7-105", name: "赵欣然", phone: "15233447788", trackingNo: "312123456789012" }, { address: "万达华府5-202", name: "刘洋", phone: "13912345678", trackingNo: "320987654321098" }, { address: "绿地世纪城18-304", name: "陈晨", phone: "15812345678", trackingNo: "438765432109876" }] };
+    const notPickedData = { count: 5, details: [{ address: "翠湖天地9栋105", name: "陈敏", phone: "15233445566", trackingNo: "320987654321098" }, { address: "世纪新城22-1104", name: "赵敏", phone: "17788990011", trackingNo: "438765432109876" }, { address: "蓝湾国际3-202", name: "孙丽", phone: "18812345678", trackingNo: "467654321098765" }, { address: "保利花园8-503", name: "周杰", phone: "15012345678", trackingNo: "312998877665544" }] };
+    const fakeSignData = { fakeCount: 12, totalSignCount: 436, fakeRate: "2.75", details: [{ trackingNo: "320556677889901", signTime: "2026/05/28 14:23:10", complaintType: "客户投诉", signType: "驿站类", signContent: "宝龙城市广场站点" }, { trackingNo: "431122334455667", signTime: "2026/05/27 09:45:33", complaintType: "客户投诉", signType: "驿站类", signContent: "宝龙城市广场站点" }, { trackingNo: "462233445566778", signTime: "2026/05/26 18:12:07", complaintType: "服务体验", signType: "代收点类", signContent: "宝龙城市广场站点" }, { trackingNo: "312998877665544", signTime: "2026/05/25 11:30:22", complaintType: "客户投诉", signType: "驿站类", signContent: "宝龙城市广场站点" }] };
+    const lostData = { count: 3, details: [{ trackingNo: "320901234567890", dispatchTime: "2026/05/25 10:30:22", lostSource: "操作仲裁", respLink: "派送无签收", penalty: 20 }, { trackingNo: "431234567890123", dispatchTime: "2026/05/24 16:45:00", lostSource: "客户投诉", respLink: "中转异常", penalty: 50 }, { trackingNo: "463344556677889", dispatchTime: "2026/05/23 08:20:15", lostSource: "操作仲裁", respLink: "派送无签收", penalty: 20 }] };
+    const brokenData = { count: 4, details: [{ trackingNo: "312112233445566", dispatchTime: "2026/05/27 11:15:40", brokenSource: "仲裁", respLink: "签收后异常", penalty: 20 }, { trackingNo: "320998877665544", dispatchTime: "2026/05/26 09:50:12", brokenSource: "客户反馈", respLink: "包装破损", penalty: 30 }, { trackingNo: "435566778899001", dispatchTime: "2026/05/25 14:20:05", brokenSource: "仲裁", respLink: "签收后异常", penalty: 20 }] };
+    const sixDaysNoOutData = { count: 2, isJump: true };
+    const noCallData = { shouldCall: 124, called: 98, notCalled: 26, callRate: "79.0", details: [{ trackingNo: "320556677889900", dispatchTime: "2026/05/28 08:00:00", signTime: "2026/05/28 19:30:00", signPerson: "本人", typeTag: "客户声音" }, { trackingNo: "439988776655443", dispatchTime: "2026/05/27 14:20:00", signTime: "2026/05/27 20:15:00", signPerson: "家人代收", typeTag: "智橙网" }, { trackingNo: "461122334455667", dispatchTime: "2026/05/26 11:45:00", signTime: "2026/05/26 17:00:00", signPerson: "本人", typeTag: "客户声音" }] };
+    const noDoorData = { shouldDoor: 210, doneDoor: 182, notDoor: 28, doorRate: "86.7", details: [{ trackingNo: "312776655443322", dispatchTime: "2026/05/28 09:10:00", signTime: "2026/05/28 18:45:00", signPerson: "本人", typeTag: "智橙网" }, { trackingNo: "320665544332211", dispatchTime: "2026/05/27 13:30:00", signTime: "2026/05/27 21:00:00", signPerson: "驿站代收", typeTag: "客户声音" }, { trackingNo: "438899001122334", dispatchTime: "2026/05/26 10:15:00", signTime: "2026/05/26 16:30:00", signPerson: "本人", typeTag: "客户声音" }] };
+    const extraData1 = { count: 6, details: [{ address: "测试地址1", name: "测试用户", phone: "13800000001", trackingNo: "320111111111111" }] };
+    const extraData2 = { count: 3, details: [{ address: "测试地址2", name: "测试用户2", phone: "13800000002", trackingNo: "431111111111112" }] };
+    const extraData3 = { count: 7, details: [{ address: "测试地址3", name: "测试用户3", phone: "13800000003", trackingNo: "461111111111113" }] };
+    const extraData4 = { count: 2, details: [{ address: "测试地址4", name: "测试用户4", phone: "13800000004", trackingNo: "312111111111114" }] };
+    const extraData5 = { count: 4, details: [{ address: "测试地址5", name: "测试用户5", phone: "13800000005", trackingNo: "320555555555555" }] };
+    [timeoutPickupData, notPickedData, fakeSignData, lostData, brokenData, noCallData, noDoorData, extraData1, extraData2, extraData3, extraData4, extraData5].forEach(ref => { if (ref.details) ensureTrackingNumbers(ref.details); });
+
+    const metricsConfig = [
+        { id: "timeout", label: "超时揽收", dataRef: timeoutPickupData, detailType: "addressPhone" },
+        { id: "notPicked", label: "未取件", dataRef: notPickedData, detailType: "addressPhone" },
+        { id: "fakeSign", label: "虚假签收", dataRef: fakeSignData, hasTopStats: true, statsKeys: ["fakeCount","totalSignCount","fakeRate"], statsLabels: ["虚假签收量","签收总量","虚假签收率"], detailType: "fakeDetail" },
+        { id: "lost", label: "遗失", dataRef: lostData, detailType: "lostBrokenDetail" },
+        { id: "broken", label: "破损", dataRef: brokenData, detailType: "lostBrokenDetail" },
+        { id: "sixDays", label: "6天未出库", dataRef: sixDaysNoOutData, detailType: "jump" },
+        { id: "noCall", label: "未电联", dataRef: noCallData, hasTopStats: true, statsKeys: ["shouldCall","called","notCalled","callRate"], statsLabels: ["应电联量","已电联量","未电联量","电联率"], detailType: "callDoorDetail" },
+        { id: "noDoor", label: "未上门", dataRef: noDoorData, hasTopStats: true, statsKeys: ["shouldDoor","doneDoor","notDoor","doorRate"], statsLabels: ["应上门量","已上门量","未上门量","上门率"], detailType: "callDoorDetail" },
+        { id: "extra1", label: "异常滞留", dataRef: extraData1, detailType: "addressPhone" },
+        { id: "extra2", label: "改址派送", dataRef: extraData2, detailType: "addressPhone" },
+        { id: "extra3", label: "二次投递", dataRef: extraData3, detailType: "addressPhone" },
+        { id: "extra4", label: "转寄退回", dataRef: extraData4, detailType: "addressPhone" },
+        { id: "extra5", label: "客户撤单", dataRef: extraData5, detailType: "addressPhone" }
+    ];
+
+    let currentMetricId = "timeout";
+    let plainTextMap = new Map();
+
+    function renderDate() { document.getElementById('dateDisplay').innerText = "05/28"; }
+    function getMetricDisplayCount(metric) {
+        const ref = metric.dataRef;
+        if (metric.id === 'sixDays') return ref.count;
+        if (metric.id === 'fakeSign') return ref.fakeCount;
+        if (metric.id === 'noCall') return ref.notCalled;
+        if (metric.id === 'noDoor') return ref.notDoor;
+        if (ref.count !== undefined) return ref.count;
+        return ref.details?.length || 0;
+    }
+
+    function paginateMetrics(metrics, itemsPerPage = 8) {
+        const pages = [];
+        for (let i = 0; i < metrics.length; i += itemsPerPage) pages.push(metrics.slice(i, i + itemsPerPage));
+        return pages;
+    }
+
+    function renderSlidingMetrics() {
+        const track = document.getElementById('metricsTrack');
+        const dotsContainer = document.getElementById('paginationDots');
+        const pages = paginateMetrics(metricsConfig, 8);
+        track.innerHTML = ''; dotsContainer.innerHTML = '';
+        pages.forEach((pageMetrics, pageIndex) => {
+            const pageDiv = document.createElement('div'); pageDiv.className = 'metrics-page';
+            const gridDiv = document.createElement('div'); gridDiv.className = 'metrics-grid';
+            pageMetrics.forEach(metric => {
+                const countVal = getMetricDisplayCount(metric);
+                const card = document.createElement('div');
+                card.className = `metric-card ${currentMetricId === metric.id ? 'active' : ''}`;
+                card.innerHTML = `<span class="metric-text">${metric.label}</span><span class="metric-count-inline">${countVal}</span>`;
+                card.addEventListener('click', () => { currentMetricId = metric.id; renderSlidingMetrics(); renderDetailByMetric(); });
+                gridDiv.appendChild(card);
+            });
+            pageDiv.appendChild(gridDiv); track.appendChild(pageDiv);
+            const dot = document.createElement('div'); dot.className = 'dot';
+            if (pageIndex === 0) dot.classList.add('active');
+            dot.addEventListener('click', () => { const pagesEl = document.querySelectorAll('.metrics-page'); if(pagesEl[pageIndex]) pagesEl[pageIndex].scrollIntoView({ behavior: 'smooth', inline: 'start' }); });
+            dotsContainer.appendChild(dot);
+        });
+        const scrollContainer = document.getElementById('metricsScroll');
+        scrollContainer.addEventListener('scroll', () => {
+            const pagesEl = document.querySelectorAll('.metrics-page'); const dots = document.querySelectorAll('.dot');
+            const containerRect = scrollContainer.getBoundingClientRect();
+            let activeIdx = 0;
+            for (let i = 0; i < pagesEl.length; i++) {
+                const rect = pagesEl[i].getBoundingClientRect();
+                if (rect.left <= containerRect.left + containerRect.width/2 && rect.right >= containerRect.left + containerRect.width/2) { activeIdx = i; break; }
+            }
+            dots.forEach((d, idx) => idx === activeIdx ? d.classList.add('active') : d.classList.remove('active'));
+        });
+    }
+
+    function bindTrackingClick() {
+        document.querySelectorAll('.tracking-clickable').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const trackingNo = el.getAttribute('data-tracking');
+                const address = el.getAttribute('data-address') || '';
+                const name = el.getAttribute('data-name') || '';
+                const phone = el.getAttribute('data-phone') || '';
+                showTrackDetail(trackingNo, { address, name, phone, senderName: "发件方", senderPhone: "13812345678" });
+            });
+        });
+    }
+
+    function renderDetailByMetric() {
+        const metric = metricsConfig.find(m => m.id === currentMetricId);
+        if (!metric) return;
+        const panel = document.getElementById('detailPanel'); const ref = metric.dataRef;
+        if (metric.id === 'sixDays') { panel.innerHTML = `<div class="empty-state">暂无明细数据<div class="jump-link" id="jumpToFeature">📋 跳转到现有功能列表</div></div>`; document.getElementById('jumpToFeature')?.addEventListener('click',()=>alert("跳转至6天未出库")); return; }
+        let topStatsHtml = '';
+        if (metric.hasTopStats && metric.statsKeys) {
+            const statsHtmlArr = [];
+            for(let i=0; i<metric.statsKeys.length; i++) {
+                let val = ref[metric.statsKeys[i]];
+                let isRate = (metric.statsKeys[i] === 'fakeRate' || metric.statsKeys[i] === 'callRate' || metric.statsKeys[i] === 'doorRate');
+                statsHtmlArr.push(`<div class="stat-item"><div class="stat-label">${metric.statsLabels[i]}</div><div class="stat-number">${isRate ? val + '%' : val}</div></div>`);
+            }
+            topStatsHtml = `<div class="stats-summary">${statsHtmlArr.join('')}</div>`;
+        }
+        const details = ref.details || [];
+        let cardsHtml = '<div class="detail-list">';
+        if (metric.detailType === 'addressPhone') {
+            details.forEach((item, idx) => {
+                const mapKey = `${currentMetricId}_${idx}`;
+                const isPlain = plainTextMap.get(mapKey) || false;
+                const displayName = isPlain ? item.name : maskName(item.name);
+                const displayPhone = isPlain ? item.phone : maskPhone(item.phone);
+                // 电话按钮仅保留图标，不绑定任何拨号功能（无 data-phone 属性）
+                cardsHtml += `<div class="record-card"><div class="field-row"><span class="field-value address-value">${escapeHtml(item.address)}</span></div><div class="contact-row"><div class="contact-info"><span class="contact-name">${displayName}</span><span class="phone-number">${displayPhone}</span><span class="eye-icon" data-metric="${currentMetricId}" data-idx="${idx}">👁</span></div><button class="call-icon" style="opacity:0.5; cursor:default;" disabled>📞</button></div><div class="field-row"><span class="field-label">运单号</span><span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}" data-address="${escapeHtml(item.address)}" data-name="${item.name}" data-phone="${item.phone}">${item.trackingNo}</span></span></div></div>`;
+            });
+        } else if (metric.detailType === 'fakeDetail') {
+            details.forEach(item => { cardsHtml += `<div class="record-card"><div class="field-row"><span class="field-label">单号</span><span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}">${item.trackingNo}</span></span></div><div class="field-row"><span class="field-label">签收时间</span><span class="field-value">${item.signTime}</span></div><div class="field-row"><span class="field-label">投诉类型</span><span class="field-value">${item.complaintType}</span></div><div class="field-row"><span class="field-label">签收类型</span><span class="field-value">${item.signType}</span></div><div class="field-row"><span class="field-label">签收内容</span><span class="field-value">${item.signContent}</span></div></div>`; });
+        } else if (metric.detailType === 'lostBrokenDetail') {
+            const isLost = metric.id === 'lost';
+            details.forEach(item => { cardsHtml += `<div class="record-card"><div class="field-row"><span class="field-label">单号</span><span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}">${item.trackingNo}</span></span></div><div class="field-row"><span class="field-label">分发时间</span><span class="field-value">${item.dispatchTime}</span></div><div class="field-row"><span class="field-label">${isLost ? '遗失来源' : '破损来源'}</span><span class="field-value">${isLost ? item.lostSource : item.brokenSource}</span></div><div class="field-row"><span class="field-label">责任环节</span><span class="field-value">${item.respLink}</span></div><div class="field-row"><span class="field-label">考核金额(元)</span><span class="field-value">${item.penalty}</span></div></div>`; });
+        } else if (metric.detailType === 'callDoorDetail') {
+            details.forEach(item => { cardsHtml += `<div class="record-card"><div class="field-row"><span class="field-label">单号</span><span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}">${item.trackingNo}</span></span></div><div class="field-row"><span class="field-label">分发时间</span><span class="field-value">${item.dispatchTime}</span></div><div class="field-row"><span class="field-label">签收时间</span><span class="field-value">${item.signTime}</span></div><div class="field-row"><span class="field-label">签收人</span><span class="field-value">${item.signPerson}</span></div><div class="field-row"><span class="field-label">类型</span><span class="field-value"><span class="type-tag">${item.typeTag}</span></span></div></div>`; });
+        }
+        cardsHtml += '</div>';
+        if (details.length === 0 && metric.id !== 'sixDays') cardsHtml = '<div class="empty-state">暂无明细数据</div>';
+        panel.innerHTML = topStatsHtml + cardsHtml;
+        if (metric.detailType === 'addressPhone') {
+            document.querySelectorAll('.eye-icon').forEach(icon => {
+                icon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const metricId = icon.getAttribute('data-metric'); const idx = parseInt(icon.getAttribute('data-idx'));
+                    const key = `${metricId}_${idx}`; const current = plainTextMap.get(key) || false;
+                    plainTextMap.set(key, !current); renderDetailByMetric();
+                });
+            });
+        }
+        // 注意：addressPhone 类型的电话按钮已禁用，不再绑定拨号事件
+        // 其他类型的 detailType 中没有电话按钮，无需处理
+        bindTrackingClick();
+    }
+
+    function init() { renderDate(); renderSlidingMetrics(); renderDetailByMetric(); document.getElementById('closeDetailBtn').addEventListener('click', closeTrackDetail); }
+    init();
+</script>
+</body>
+</html>
