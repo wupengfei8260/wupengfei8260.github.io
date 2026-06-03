@@ -873,6 +873,7 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
                             <button class="page-back-btn" id="pageBackBtn" aria-label="返回上一页">&lt;</button>
                             <div class="title-wrap">
                                 <div class="title">复盘日报</div>
+                                <div class="title-sub">全面分析自我，高效提升突破</div>
                             </div>
                             <button class="date-switch" id="dateSwitch" type="button" aria-label="切换日期">
                                 <span class="date-today" id="dateDisplay">06/02 17:30</span>

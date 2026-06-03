@@ -104,7 +104,7 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
 
                 .title-sub {
                     font-size: 12px;
-                    color: #7f8ca3;
+                    color: rgba(255, 255, 255, 0.88);
                     line-height: 1.45;
                 }
 
