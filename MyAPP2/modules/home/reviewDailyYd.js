@@ -2,21 +2,32 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
+    // 从明细页切回汇总页时，容器可能保留了 overflow:hidden；这里显式恢复可滚动布局。
+    container.style.display = 'block';
+    container.style.flexDirection = '';
+    container.style.height = '100%';
+    container.style.minHeight = '0';
+    container.style.overflow = 'auto';
+
     container.innerHTML = `
         <section class="review-page">
             <style>
                 .review-page {
-                    min-height: 100%;
+                    height: 100%;
+                    min-height: 0;
                     background: #eef0f4;
                     color: #1f2329;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;
                     padding-bottom: 18px;
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
                     --indicator-size: 14px;
                 }
 
                 .review-topbar {
                     background: linear-gradient(105deg, #1f4bea 0%, #3c76ff 48%, #57b6ff 100%);
-                    position: relative;
+                    position: sticky;
+                    top: 0;
                     overflow: hidden;
                     z-index: 5;
                     display: flex;
@@ -183,7 +194,7 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
 
                 .review-main {
                     margin-top: -8px;
-                    padding: 0 14px;
+                    padding: 0 14px 24px;
                 }
 
                 .panel {
@@ -290,7 +301,7 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
 
                 .detail-jump {
                     color: #2f7dff;
-                    text-decoration: underline;
+                    text-decoration: none;
                     cursor: pointer;
                 }
 
