@@ -228,12 +228,13 @@
             consult: { name: '咨询', file: 'modules/consult.js' },
             data: { name: '数据', file: 'modules/data.js' },
             profile: { name: '我的', file: 'modules/profile.js' },
-            reviewDaily: { name: '复盘日报', file: 'modules/home/reviewDaily.js' }
+            reviewDaily: { name: '复盘日报', file: 'modules/home/reviewDaily.js' },
+            reviewDailyYd: { name: '复盘日报昨日', file: 'modules/home/reviewDailyYd.js' }
         };
         
         let currentModule = null;
         
-        async function loadModule(moduleId) {
+        async function loadModule(moduleId, routeParams = {}) {
             const module = modules[moduleId];
             if (!module) return;
             
@@ -257,7 +258,8 @@
                 if (moduleExports.render) {
                     await moduleExports.render('appContent', {
                         navigateTo: loadModule,
-                        showToast: (msg) => alert(msg)
+                        showToast: (msg) => alert(msg),
+                        routeParams
                     });
                 }
             } catch (error) {

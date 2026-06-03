@@ -322,6 +322,14 @@ export async function render(containerId, { showToast, navigateTo }) {
                 }
                 .card-left { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 
+                .card-unread-dot {
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: #ff4d4f;
+                    flex-shrink: 0;
+                }
+
                 .banner {
                     margin-top: 10px;
                     border-radius: 12px;
@@ -473,7 +481,7 @@ export async function render(containerId, { showToast, navigateTo }) {
 
                 <section class="cards">
                     <div class="card"><div class="card-left">🗓 待办</div><div>›</div></div>
-                    <div class="card" id="reviewDailyCard" role="button" tabindex="0"><div class="card-left">🧾 复盘日报</div><div>›</div></div>
+                    <div class="card" id="reviewDailyCard" role="button" tabindex="0"><div class="card-left">🧾 复盘日报<span class="card-unread-dot" aria-hidden="true"></span></div><div>›</div></div>
                     <div class="card"><div class="card-left">🎓 学院</div><div>›</div></div>
                     <div class="card"><div class="card-left">✅ 质检</div><div>›</div></div>
                     <div class="card"><div class="card-left">⏰ 提醒</div><div>›</div></div>

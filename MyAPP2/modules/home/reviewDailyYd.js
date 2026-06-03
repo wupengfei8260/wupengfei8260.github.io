@@ -15,15 +15,45 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                 }
 
                 .review-topbar {
-                    background: #fff;
+                    background: linear-gradient(105deg, #1f4bea 0%, #3c76ff 48%, #57b6ff 100%);
                     position: relative;
                     overflow: hidden;
                     z-index: 5;
                     display: flex;
-                    justify-content: space-between;
+                    justify-content: center;
                     align-items: center;
-                    padding: 10px 0 13px 34px;
-                    margin-bottom: 10px;
+                    padding: 10px 34px 13px;
+                    min-height: 60px;
+                    margin-bottom: 0;
+                }
+
+                .summary-switch-btn {
+                    position: absolute;
+                    right: 12px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    border: 1px solid rgba(255, 255, 255, 0.45);
+                    background: rgba(255, 255, 255, 0.16);
+                    color: rgba(255, 255, 255, 0.95);
+                    border-radius: 999px;
+                    padding: 6px 10px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    line-height: 1;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    flex-shrink: 0;
+                    gap: 4px;
+                }
+
+                .summary-switch-caret {
+                    width: 0;
+                    height: 0;
+                    border-left: 4px solid transparent;
+                    border-right: 4px solid transparent;
+                    border-top: 5px solid rgba(255, 255, 255, 0.95);
                 }
 
                 .review-back {
@@ -38,7 +68,7 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                     border-radius: 999px;
                     font-size: 24px;
                     line-height: 1;
-                    color: #1e2a3a;
+                    color: #fff;
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
@@ -49,12 +79,14 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                     display: flex;
                     flex-direction: column;
                     gap: 3px;
+                    align-items: center;
+                    text-align: center;
                 }
 
                 .title {
-                    font-size: 22px;
+                    font-size: 21px;
                     font-weight: 400;
-                    color: #1e2a3a;
+                    color: #fff;
                     letter-spacing: -0.2px;
                     line-height: 1.25;
                 }
@@ -254,6 +286,12 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                     font-size: var(--indicator-size);
                     line-height: 1;
                     font-weight: 700;
+                }
+
+                .detail-jump {
+                    color: #2f7dff;
+                    text-decoration: underline;
+                    cursor: pointer;
                 }
 
                 .settle-main {
@@ -531,17 +569,13 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                 <button class="review-back" id="reviewBack" aria-label="返回首页">‹</button>
                 <div class="title-wrap">
                     <div class="title">复盘日报</div>
-                    <div class="title-sub">全面分析自我，高效提升突破</div>
                 </div>
+                <button class="summary-switch-btn" type="button" id="switchTodayBtn">昨日<span class="summary-switch-caret"></span></button>
             </header>
 
             <section class="review-banner">
                 <div class="review-banner-title">
                     复盘日报
-                    <small>
-                        <button class="review-date-btn is-active" type="button" data-day="today" aria-pressed="true"><span class="review-date-value">05/30</span> <span class="review-date-time">17:30</span></button>
-                        <button class="review-date-btn" type="button" data-day="yesterday" aria-pressed="false"><span class="review-date-value">05/29</span></button>
-                    </small>
                 </div>
                 <div class="review-banner-sub">全面分析自我，高效提升突破</div>
             </section>
@@ -594,13 +628,13 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                                 <div class="exception-grid">
                                     <div>
                                         <div class="exception-col-title">散单</div>
-                                        <div class="exception-item"><span>超时揽收</span><strong>86</strong></div>
-                                        <div class="exception-item"><span>未取件</span><strong>67</strong></div>
+                                        <div class="exception-item"><span>超时揽收</span><strong class="detail-jump" data-detail-main="scatter" data-detail-sub="timeout">86</strong></div>
+                                        <div class="exception-item"><span>未取件</span><strong class="detail-jump" data-detail-main="scatter" data-detail-sub="notPicked">67</strong></div>
                                     </div>
                                     <div>
                                         <div class="exception-col-title">派件</div>
-                                        <div class="exception-item"><span>未电联</span><a data-tip="未电联">10</a></div>
-                                        <div class="exception-item"><span>未上门签收</span><a data-tip="未送上门">12</a></div>
+                                        <div class="exception-item"><span>未电联</span><a class="detail-jump" data-detail-main="scatter" data-detail-sub="noCall">10</a></div>
+                                        <div class="exception-item"><span>未上门签收</span><a class="detail-jump" data-detail-main="scatter" data-detail-sub="noDoor">12</a></div>
                                     </div>
                                 </div>
                             </div>
@@ -611,8 +645,8 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                         <article class="risk-card">
                             <div class="risk-head">结算风险</div>
                             <div class="risk-body">
-                                <div class="settle-main">7天未出库</div>
-                                <div class="stat-row" style="margin-top:8px;"><a data-tip="7天未出库">30</a><span class="settle-note">(将影响结算)</span></div>
+                                <div class="settle-main">6天未出库</div>
+                                <div class="stat-row" style="margin-top:8px;"><a class="detail-jump" data-detail-main="sixDays">30</a><span class="settle-note">(将影响结算)</span></div>
                             </div>
                         </article>
                         <article class="risk-card">
@@ -621,15 +655,15 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                                 <div class="quality-grid">
                                     <div class="quality-item">
                                         <div class="quality-name">虚假签收</div>
-                                        <div class="quality-num">10</div>
+                                        <div class="quality-num detail-jump" data-detail-main="quality" data-detail-sub="fakeSign">10</div>
                                     </div>
                                     <div class="quality-item">
                                         <div class="quality-name">破损</div>
-                                        <div class="quality-num">28</div>
+                                        <div class="quality-num detail-jump" data-detail-main="quality" data-detail-sub="broken">28</div>
                                     </div>
                                     <div class="quality-item">
                                         <div class="quality-name">遗失</div>
-                                        <div class="quality-num">36</div>
+                                        <div class="quality-num detail-jump" data-detail-main="quality" data-detail-sub="lost">36</div>
                                     </div>
                                 </div>
                             </div>
@@ -644,12 +678,12 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                     <div class="board">
                         <div class="board-col">
                             <div class="board-label">1030签收率</div>
-                            <div class="board-value">60%</div>
+                            <div class="board-value detail-jump" data-detail-main="timeliness">60%</div>
                             <div class="board-note">较昨日 <strong>23%</strong> ↘ <span class="emoji">😟</span></div>
                         </div>
                         <div class="board-col">
                             <div class="board-label">派签时长</div>
-                            <div class="board-value">1.2H</div>
+                            <div class="board-value detail-jump" data-detail-main="duration">1.2H</div>
                             <div class="board-note">(已落后全网30%的业务员，请优化流程)</div>
                             <div class="progress"><span class="active"></span><span></span><span></span><span></span></div>
                         </div>
@@ -691,68 +725,40 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
 
     const backBtn = document.getElementById('reviewBack');
     const rankDetail = document.getElementById('rankDetail');
-    const bannerSub = container.querySelector('.review-banner-sub');
-    const dateButtons = Array.from(container.querySelectorAll('.review-date-btn'));
-    const todayDateEl = container.querySelector(".review-date-btn[data-day='today'] .review-date-value");
-    const todayTimeEl = container.querySelector(".review-date-btn[data-day='today'] .review-date-time");
-    const yesterdayDateEl = container.querySelector(".review-date-btn[data-day='yesterday'] .review-date-value");
-    const tipLinks = Array.from(container.querySelectorAll('[data-tip]'));
+    const switchTodayBtn = document.getElementById('switchTodayBtn');
+    const summaryDetailLinks = Array.from(container.querySelectorAll('[data-detail-main]'));
 
-    const formatMMDD = (date) => {
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${month}/${day}`;
-    };
+    const jumpToYesterdayDetail = (mainId, subId = null) => {
+        if (typeof navigateTo === 'function') {
+            navigateTo('reviewDaily', {
+                day: 'yesterday',
+                    switchLabel: '昨日',
+                switchTarget: 'reviewDaily',
+                hideMustSign: true,
+                    backTarget: 'reviewDailyYd',
+                initialLargeMetricId: mainId,
+                initialSubMetricId: subId || null
+            });
+            return;
+        }
 
-    const formatHHMM = (date) => {
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-    };
-
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-
-    if (todayDateEl) todayDateEl.textContent = formatMMDD(now);
-    if (todayTimeEl) todayTimeEl.textContent = formatHHMM(now);
-    if (yesterdayDateEl) yesterdayDateEl.textContent = formatMMDD(yesterday);
-
-    const reportMeta = {
-        today: {
-            sub: '全面分析自我，高效提升突破（今日）'
-        },
-        yesterday: {
-            sub: '全面分析自我，高效提升突破（昨日）'
+        if (typeof showToast === 'function') {
+            showToast('跳转昨日明细页');
         }
     };
-
-    const setReportDay = (day) => {
-        dateButtons.forEach((button) => {
-            const isActive = button.dataset.day === day;
-            button.classList.toggle('is-active', isActive);
-            button.setAttribute('aria-pressed', String(isActive));
-        });
-
-        if (bannerSub && reportMeta[day]) {
-            bannerSub.textContent = reportMeta[day].sub;
-        }
-    };
-
-    dateButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-            const day = button.dataset.day;
-            if (!day) return;
-            setReportDay(day);
-        });
-    });
-
-    setReportDay('today');
 
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             if (typeof navigateTo === 'function') {
                 navigateTo('home');
+            }
+        });
+    }
+
+    if (switchTodayBtn) {
+        switchTodayBtn.addEventListener('click', () => {
+            if (typeof navigateTo === 'function') {
+                navigateTo('reviewDaily');
             }
         });
     }
@@ -766,13 +772,13 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
         });
     }
 
-    tipLinks.forEach(link => {
+    summaryDetailLinks.forEach(link => {
         link.addEventListener('click', (event) => {
             event.preventDefault();
-            const title = link.getAttribute('data-tip');
-            if (typeof showToast === 'function') {
-                showToast(`${title}详情开发中`);
-            }
+            const mainId = link.getAttribute('data-detail-main');
+            const subId = link.getAttribute('data-detail-sub');
+            if (!mainId) return;
+            jumpToYesterdayDetail(mainId, subId);
         });
     });
 }

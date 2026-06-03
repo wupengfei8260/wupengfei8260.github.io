@@ -1,6 +1,16 @@
-export async function render(containerId, { navigateTo, showToast } = {}) {
+export async function render(containerId, { navigateTo, showToast, routeParams = {} } = {}) {
     const container = document.getElementById(containerId);
     if (!container) return;
+
+    const isTodaySelected = routeParams.day !== 'yesterday';
+    const hideMustSign = Boolean(routeParams.hideMustSign);
+    const switchLabel = routeParams.switchLabel || (isTodaySelected ? '今日' : '昨日');
+    const switchTarget = routeParams.switchTarget || (isTodaySelected ? 'reviewDailyYd' : 'reviewDaily');
+    const switchTargetParams = routeParams.switchTargetParams || {};
+    const backTarget = routeParams.backTarget || 'home';
+    const backTargetParams = routeParams.backTargetParams || {};
+    const initialLargeMetricId = routeParams.initialLargeMetricId || 'scatter';
+    const initialSubMetricId = routeParams.initialSubMetricId || null;
 
     const previousContainerStyle = {
         height: container.style.height,
@@ -72,9 +82,10 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
 
                 .header {
                     display: flex;
-                    justify-content: space-between;
+                    justify-content: center;
                     align-items: center;
-                    padding: 10px 0 13px 34px;
+                    padding: 10px 34px 13px;
+                    min-height: 60px;
                     margin-bottom: 10px;
                     position: relative;
                     background: transparent;
@@ -101,7 +112,7 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                 }
 
                 .title {
-                    font-size: 22px;
+                    font-size: 21px;
                     font-weight: 400;
                     color: #1e2a3a;
                     letter-spacing: -0.2px;
@@ -112,6 +123,8 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                     display: flex;
                     flex-direction: column;
                     gap: 3px;
+                    align-items: center;
+                    text-align: center;
                 }
 
                 .title-sub {
@@ -121,6 +134,10 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                 }
 
                 .date-switch {
+                    position: absolute;
+                    right: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
                     display: inline-flex;
                     align-items: center;
                     gap: 4px;
@@ -128,7 +145,7 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                     background: #f3f6fb;
                     color: #6f7c8f;
                     border-radius: 999px;
-                    padding: 4px 8px;
+                    padding: 6px 10px;
                     cursor: pointer;
                     z-index: 1;
                 }
@@ -856,7 +873,6 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                             <button class="page-back-btn" id="pageBackBtn" aria-label="返回上一页">&lt;</button>
                             <div class="title-wrap">
                                 <div class="title">复盘日报</div>
-                                <div class="title-sub">全面分析自我，高效提升突破</div>
                             </div>
                             <button class="date-switch" id="dateSwitch" type="button" aria-label="切换日期">
                                 <span class="date-today" id="dateDisplay">06/02 17:30</span>
@@ -887,7 +903,6 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
 
     const appNav = document.querySelector('.app-nav');
     const previousNavDisplay = appNav ? appNav.style.display : '';
-    let isTodaySelected = true;
 
     const yesterdayCountMap = {
         timeout: 1,
@@ -912,7 +927,7 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
         container.style.minHeight = previousContainerStyle.minHeight;
         setAppNavVisible(true);
         if (typeof navigateTo === 'function') {
-            navigateTo('home');
+            navigateTo(backTarget, backTargetParams);
             return;
         }
         window.history.back();
@@ -1147,30 +1162,13 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
     ];
 
     const plainTextMap = new Map();
-    let currentLargeMetricId = 'scatter';
-    let currentSubMetricId = null;
+    let currentLargeMetricId = initialLargeMetricId;
+    let currentSubMetricId = initialSubMetricId;
 
     function renderDate() {
         const el = container.querySelector('#dateDisplay');
-        const switchEl = container.querySelector('#dateSwitch');
         if (!el) return;
-        el.innerText = isTodaySelected ? '06/02' : '06/01';
-        if (switchEl) {
-            switchEl.classList.toggle('is-yesterday', !isTodaySelected);
-        }
-    }
-
-    function toggleDateDisplay() {
-        isTodaySelected = !isTodaySelected;
-        renderDate();
-        // 如果切换到昨日且当前选中的是mustSign，则切换到散单揽件
-        if (!isTodaySelected && currentLargeMetricId === 'mustSign') {
-            currentLargeMetricId = 'scatter';
-            currentSubMetricId = null;
-        }
-        renderMainTabs();
-        renderSubTabs();
-        renderMetricContent();
+        el.innerText = switchLabel;
     }
 
     function getSubMetricCount(subMetric) {
@@ -1209,7 +1207,7 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
 
         // 过滤掉非今日时的mustSign模块
         const visibleMetrics = largeMetrics.filter((metric) => {
-            if (metric.id === 'mustSign' && !isTodaySelected) {
+            if (metric.id === 'mustSign' && hideMustSign) {
                 return false;
             }
             return true;
@@ -1344,22 +1342,25 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
     }
 
     function renderTimelinessCard() {
+        const timelinessItems = [
+            { label: '1030签收率', value: '60' },
+            { label: '1400签收率', value: '72' }
+        ];
+
+        if (!isTodaySelected) {
+            timelinessItems.push({ label: '2359签收率', value: '94' });
+        }
+
         return `
             <section class="panel">
                 <div class="panel-title">时效看板</div>
                 <div class="metric-kpi">
-                    <div class="kpi-item">
-                        <div class="kpi-label">1030签收率</div>
-                        <div class="kpi-value">60<span class="kpi-unit">%</span></div>
-                    </div>
-                    <div class="kpi-item">
-                        <div class="kpi-label">1400签收率</div>
-                        <div class="kpi-value">72<span class="kpi-unit">%</span></div>
-                    </div>
-                    <div class="kpi-item">
-                        <div class="kpi-label">2359签收率</div>
-                        <div class="kpi-value">94<span class="kpi-unit">%</span></div>
-                    </div>
+                    ${timelinessItems.map((item) => `
+                        <div class="kpi-item">
+                            <div class="kpi-label">${item.label}</div>
+                            <div class="kpi-value">${item.value}<span class="kpi-unit">%</span></div>
+                        </div>
+                    `).join('')}
                 </div>
             </section>
         `;
@@ -1596,14 +1597,23 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
     function init() {
         setAppNavVisible(false);
         renderDate();
-        currentSubMetricId = largeMetrics.find((m) => m.id === currentLargeMetricId)?.subMetrics?.[0]?.id || null;
+        if (!largeMetrics.some((metric) => metric.id === currentLargeMetricId && (!hideMustSign || metric.id !== 'mustSign'))) {
+            currentLargeMetricId = 'scatter';
+        }
+        if (!currentSubMetricId) {
+            currentSubMetricId = largeMetrics.find((m) => m.id === currentLargeMetricId)?.subMetrics?.[0]?.id || null;
+        }
         renderMainTabs();
         renderSubTabs();
         renderMetricContent();
 
         container.querySelector('#closeDetailBtn')?.addEventListener('click', closeTrackDetail);
         container.querySelector('#pageBackBtn')?.addEventListener('click', handlePageBack);
-        container.querySelector('#dateSwitch')?.addEventListener('click', toggleDateDisplay);
+        container.querySelector('#dateSwitch')?.addEventListener('click', () => {
+            if (typeof navigateTo === 'function') {
+                navigateTo(switchTarget, switchTargetParams);
+            }
+        });
 
         container.addEventListener('click', (event) => {
             const callBtn = event.target.closest('.detail-card .call-icon');
