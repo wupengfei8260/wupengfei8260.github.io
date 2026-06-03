@@ -1164,6 +1164,15 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
     const plainTextMap = new Map();
     let currentLargeMetricId = initialLargeMetricId;
     let currentSubMetricId = initialSubMetricId;
+    const hiddenTodayMetricIds = new Set(['rank', 'advice', 'overview']);
+
+    function getVisibleMetrics() {
+        return largeMetrics.filter((metric) => {
+            if (metric.id === 'mustSign' && hideMustSign) return false;
+            if (isTodaySelected && hiddenTodayMetricIds.has(metric.id)) return false;
+            return true;
+        });
+    }
 
     function renderDate() {
         const el = container.querySelector('#dateDisplay');
@@ -1205,13 +1214,7 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
         const mainTabs = container.querySelector('#mainTabs');
         if (!mainTabs) return;
 
-        // 过滤掉非今日时的mustSign模块
-        const visibleMetrics = largeMetrics.filter((metric) => {
-            if (metric.id === 'mustSign' && hideMustSign) {
-                return false;
-            }
-            return true;
-        });
+        const visibleMetrics = getVisibleMetrics();
 
         mainTabs.innerHTML = visibleMetrics.map((metric) => {
             const mainCount = getMainMetricCount(metric);
@@ -1541,6 +1544,12 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
         const panel = container.querySelector('#metricContent');
         if (!panel) return;
 
+        const visibleMetrics = getVisibleMetrics();
+        if (!visibleMetrics.some((metric) => metric.id === currentLargeMetricId)) {
+            currentLargeMetricId = visibleMetrics[0]?.id || null;
+            currentSubMetricId = visibleMetrics[0]?.subMetrics?.[0]?.id || null;
+        }
+
         const largeMetric = largeMetrics.find((m) => m.id === currentLargeMetricId);
         if (!largeMetric) return;
 
@@ -1597,8 +1606,9 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
     function init() {
         setAppNavVisible(false);
         renderDate();
-        if (!largeMetrics.some((metric) => metric.id === currentLargeMetricId && (!hideMustSign || metric.id !== 'mustSign'))) {
-            currentLargeMetricId = 'scatter';
+        const visibleMetrics = getVisibleMetrics();
+        if (!visibleMetrics.some((metric) => metric.id === currentLargeMetricId)) {
+            currentLargeMetricId = visibleMetrics[0]?.id || 'scatter';
         }
         if (!currentSubMetricId) {
             currentSubMetricId = largeMetrics.find((m) => m.id === currentLargeMetricId)?.subMetrics?.[0]?.id || null;
