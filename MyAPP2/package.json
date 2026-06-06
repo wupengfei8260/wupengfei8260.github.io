@@ -1,0 +1,13 @@
+{
+  "name": "myapp2",
+  "private": true,
+  "version": "1.0.0",
+  "description": "MyAPP2 local preview",
+  "scripts": {
+    "dev": "live-server . --host=127.0.0.1 --port=5500 --open=index.html --no-browser",
+    "dev:open": "live-server . --host=127.0.0.1 --port=5500 --open=index.html"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

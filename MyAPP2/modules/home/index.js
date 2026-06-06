@@ -1,4 +1,41 @@
 export async function render(containerId, { showToast, navigateTo }) {
+    // 子模块注册表（路径相对于本文件）
+    const subModules = {
+        mustSign:     { file: './mustSign/index.js',        hideNav: true  },
+        reviewDaily:  { file: './dailyReview/index.js',     hideNav: false },
+        reviewDailyYd:{ file: './dailyReview/yesterday.js', hideNav: false },
+    };
+
+    // 子路由分发：已知子页面在内部处理，其余转发给 index.html
+    const localNavigateTo = async (moduleId, routeParams = {}) => {
+        if (moduleId === 'home') {
+            const nav = document.querySelector('.app-nav');
+            if (nav) nav.style.display = 'flex';
+            await render(containerId, { showToast, navigateTo });
+            return;
+        }
+        if (subModules[moduleId]) {
+            const sub = subModules[moduleId];
+            const nav = document.querySelector('.app-nav');
+            if (nav) nav.style.display = sub.hideNav ? 'none' : 'flex';
+            try {
+                const url = new URL(`${sub.file}?t=${Date.now()}`, import.meta.url);
+                const mod = await import(url.href);
+                if (mod.render) {
+                    await mod.render(containerId, {
+                        navigateTo: localNavigateTo,
+                        showToast,
+                        routeParams,
+                    });
+                }
+            } catch (e) {
+                console.error('子模块加载失败:', e);
+            }
+            return;
+        }
+        navigateTo(moduleId, routeParams);
+    };
+
     const container = document.getElementById(containerId);
 
     container.innerHTML = `
@@ -203,6 +240,7 @@ export async function render(containerId, { showToast, navigateTo }) {
                     padding: 12px 2px;
                 }
                 .stats-grid + .stats-grid { border-top: 1px solid #ececec; }
+                .stats-grid > div[role="button"] { cursor: pointer; }
                 .stats-num { font-size: 22px; font-weight: 700; color: #3f3f3f; }
                 .stats-label { margin-top: 4px; font-size: 12px; color: #666; }
 
@@ -424,7 +462,7 @@ export async function render(containerId, { showToast, navigateTo }) {
             <div class="content-wrap">
                 <section class="stats">
                     <div class="stats-grid">
-                        <div><div class="stats-num">2</div><div class="stats-label">待签收</div></div>
+                        <div id="mustSignStat" role="button" tabindex="0"><div class="stats-num">34</div><div class="stats-label">待签收</div></div>
                         <div><div class="stats-num">0</div><div class="stats-label">派件跟踪</div></div>
                         <div><div class="stats-num">0</div><div class="stats-label">问题件</div></div>
                         <div><div class="stats-num">0</div><div class="stats-label">已签收</div></div>
@@ -517,6 +555,7 @@ export async function render(containerId, { showToast, navigateTo }) {
     const toolScroll = document.getElementById('toolScroll');
     const toolDots = document.getElementById('toolDots');
     const reviewDailyCard = document.getElementById('reviewDailyCard');
+    const mustSignStat = document.getElementById('mustSignStat');
 
     if (improveBtn) {
         improveBtn.addEventListener('click', () => showToast('改进建议入口'));
@@ -559,8 +598,8 @@ export async function render(containerId, { showToast, navigateTo }) {
 
     if (reviewDailyCard) {
         const jumpToReviewDaily = () => {
-            if (typeof navigateTo === 'function') {
-                navigateTo('reviewDaily');
+            if (typeof localNavigateTo === 'function') {
+                localNavigateTo('reviewDaily');
             } else {
                 showToast('复盘日报');
             }
@@ -571,6 +610,24 @@ export async function render(containerId, { showToast, navigateTo }) {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 jumpToReviewDaily();
+            }
+        });
+    }
+
+    if (mustSignStat) {
+        const jumpToMustSign = () => {
+            if (typeof localNavigateTo === 'function') {
+                localNavigateTo('mustSign', { initialTab: 'dispatch' });
+            } else {
+                showToast('待签收');
+            }
+        };
+
+        mustSignStat.addEventListener('click', jumpToMustSign);
+        mustSignStat.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                jumpToMustSign();
             }
         });
     }

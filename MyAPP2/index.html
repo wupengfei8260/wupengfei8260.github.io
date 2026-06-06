@@ -225,11 +225,9 @@
         // 模块配置
         const modules = {
             home: { name: '首页', file: 'modules/home/index.js' },
-            consult: { name: '咨询', file: 'modules/consult.js' },
-            data: { name: '数据', file: 'modules/data.js' },
-            profile: { name: '我的', file: 'modules/profile.js' },
-            reviewDaily: { name: '复盘日报', file: 'modules/home/reviewDaily.js' },
-            reviewDailyYd: { name: '复盘日报昨日', file: 'modules/home/reviewDailyYd.js' }
+            consult: { name: '咨询', file: 'modules/consult/index.js' },
+            data: { name: '数据', file: 'modules/data/index.js' },
+            profile: { name: '我的', file: 'modules/profile/index.js' }
         };
         
         let currentModule = null;
@@ -239,6 +237,10 @@
             if (!module) return;
             
             currentModule = moduleId;
+            const nav = document.querySelector('.app-nav');
+            if (nav) {
+                nav.style.display = module.hideNav ? 'none' : 'flex';
+            }
             
             // 更新导航样式
             document.querySelectorAll('.nav-item').forEach(btn => {
@@ -277,7 +279,7 @@
 
         async function openScanner() {
             try {
-                const url = new URL(`./modules/scan.js?t=${Date.now()}`, import.meta.url);
+                const url = new URL(`./modules/scan/index.js?t=${Date.now()}`, import.meta.url);
                 const scanModule = await import(url.href);
                 if (scanModule.openScanModal) {
                     await scanModule.openScanModal({
