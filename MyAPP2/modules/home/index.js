@@ -1,7 +1,6 @@
 export async function render(containerId, { showToast, navigateTo }) {
     // 子模块注册表（路径相对于本文件）
     const subModules = {
-        mustSign:     { file: './mustSign/index.js',        hideNav: true  },
         reviewDaily:  { file: './dailyReview/index.js',     hideNav: false },
         reviewDailyYd:{ file: './dailyReview/yesterday.js', hideNav: false },
     };

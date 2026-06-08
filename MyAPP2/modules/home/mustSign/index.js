@@ -1,14 +1,136 @@
-import { createMustSignTabData } from './tabs/data.js';
-import * as zcwTab from './tabs/zcw/index.js';
-import * as dispatchTab from './tabs/dispatch/index.js';
-import * as signedTab from './tabs/signed/index.js';
-import * as abnormalTab from './tabs/abnormal/index.js';
-import * as thirdTab from './tabs/third/index.js';
-
 export async function render(containerId, { navigateTo, showToast, routeParams = {} } = {}) {
     const container = document.getElementById(containerId);
     if (!container) return;
     const apiBridge = routeParams.callReportApi || window.__MUST_SIGN_API__ || {};
+
+    function createMustSignTabData() {
+        const tabMeta = [
+            { id: 'zcw', label: '智橙网', count: 20 },
+            { id: 'dispatch', label: '待派件', count: 14 },
+            { id: 'signed', label: '已签收', count: 23 },
+            { id: 'abnormal', label: '异常签收', count: 3 },
+            { id: 'third', label: '第三方', count: 9 }
+        ];
+
+        const listData = {
+            zcw: [
+                {
+                    id: 'zcw-1',
+                    contactStatus: '已电联客户 家门口',
+                    deadline: '今日 11:20:44 前签收',
+                    trackingNo: '432343074439649',
+                    platform: 'tb',
+                    time: '16:14',
+                    nameMasked: '姜荣',
+                    nameFull: '姜荣',
+                    phoneMasked: '152****1086',
+                    phoneFull: '15245641086',
+                    callTag: '派前电联',
+                    address: '上海市浦东新区邹平路191号',
+                    tags: [
+                        { text: '韵达智橙网', tone: 'danger' },
+                        { text: '送货上门', tone: 'warn' },
+                        { text: '多多专送', tone: 'plain' }
+                    ]
+                },
+                {
+                    id: 'zcw-2',
+                    contactStatus: '已电联客户 家门口',
+                    deadline: '今天12点前签收',
+                    warning: '分签预警',
+                    trackingNo: '432343074439649',
+                    platform: 'tb',
+                    time: '16:14',
+                    nameMasked: '孙菲芸',
+                    nameFull: '孙菲芸',
+                    phoneMasked: '152****1086',
+                    phoneFull: '15245641086',
+                    callTag: '电话勿扰',
+                    address: '上海市静安区江场三路272、278号市北高新技术服务园区17幢',
+                    tags: [
+                        { text: '韵达智橙网', tone: 'danger' },
+                        { text: '送货上门', tone: 'warn' },
+                        { text: '多多专送', tone: 'plain' }
+                    ]
+                }
+            ],
+            dispatch: [
+                {
+                    id: 'dispatch-1',
+                    contactStatus: '已电联客户 放门口',
+                    deadline: '今日 13:40:12 前签收',
+                    trackingNo: '881239047561204',
+                    platform: 'jd',
+                    time: '15:22',
+                    nameMasked: '吴先生',
+                    nameFull: '吴先生',
+                    phoneMasked: '138****2201',
+                    phoneFull: '13876542201',
+                    callTag: '派前电联',
+                    address: '上海市普陀区真南路150号',
+                    tags: [
+                        { text: '普通件', tone: 'plain' },
+                        { text: '送货上门', tone: 'warn' }
+                    ]
+                }
+            ],
+            signed: [],
+            abnormal: [],
+            third: []
+        };
+
+        tabMeta.forEach((tab) => {
+            if (Array.isArray(listData[tab.id])) {
+                tab.count = listData[tab.id].length;
+            }
+        });
+
+        return { tabMeta, listData };
+    }
+
+    function createFallbackTabModule(tabId, profile = {}) {
+        return {
+            getWaybillDetailProfile() {
+                return {
+                    title: profile.title || '运单详情',
+                    incentiveText: profile.incentiveText || '',
+                    submitText: profile.submitText || '提交'
+                };
+            },
+            getMoreActionsMenuHtml() {
+                return [
+                    { key: 'aiCall', label: 'AI电联代打' },
+                    { key: 'smsVoice', label: '发短信/语音' }
+                ]
+                    .map((item) => `<button class="ms-more-menu-item" type="button" data-more-action="${item.key}">${item.label}</button>`)
+                    .join('');
+            },
+            createTabFeatureController(context) {
+                return {
+                    onTabChange() {
+                        if (typeof context?.pageToast === 'function') {
+                            context.pageToast(`已切换到 ${tabId}`, 1200);
+                        }
+                    },
+                    handleCallAction(item) {
+                        if (typeof context?.pageToast === 'function') {
+                            context.pageToast(`${item?.nameMasked || '当前运单'} 呼叫中`, 1200);
+                        }
+                    }
+                };
+            }
+        };
+    }
+
+    async function loadTabModule(modulePath, fallbackModule) {
+        try {
+            const url = new URL(`${modulePath}?t=${Date.now()}`, import.meta.url);
+            return await import(url.href);
+        } catch (error) {
+            console.error(`子模块加载失败: ${modulePath}`, error);
+            return fallbackModule;
+        }
+    }
 
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
@@ -17,6 +139,16 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
     container.style.overflow = 'hidden';
 
     const { tabMeta, listData } = createMustSignTabData();
+
+    const zcwTab = await loadTabModule('./tabs/zcw/index.js', createFallbackTabModule('zcw', {
+        title: '送货上门件',
+        incentiveText: '额外获得0.8元 激励派费(仅标准上门字段签收)',
+        submitText: '上门签收'
+    }));
+    const dispatchTab = await loadTabModule('./tabs/dispatch/index.js', createFallbackTabModule('dispatch'));
+    const signedTab = await loadTabModule('./tabs/signed/index.js', createFallbackTabModule('signed'));
+    const abnormalTab = await loadTabModule('./tabs/abnormal/index.js', createFallbackTabModule('abnormal'));
+    const thirdTab = await loadTabModule('./tabs/third/index.js', createFallbackTabModule('third'));
 
     const selectedIds = new Set();
     const revealMap = {};
