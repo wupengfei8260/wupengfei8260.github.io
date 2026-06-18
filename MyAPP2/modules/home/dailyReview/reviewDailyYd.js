@@ -38,33 +38,38 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
                     margin-bottom: 0;
                 }
 
-                .summary-switch-btn {
-                    position: absolute;
-                    right: 12px;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    border: 1px solid rgba(255, 255, 255, 0.45);
-                    background: rgba(255, 255, 255, 0.16);
-                    color: rgba(255, 255, 255, 0.95);
-                    border-radius: 999px;
-                    padding: 6px 10px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    line-height: 1;
+                .top-switch {
+                    margin: 0 auto;
                     display: inline-flex;
                     align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    flex-shrink: 0;
                     gap: 4px;
+                    padding: 4px;
+                    height: 44px;
+                    border-radius: 14px;
+                    border: 1px solid rgba(255, 255, 255, 0.35);
+                    background: rgba(255, 255, 255, 0.2);
+                    min-width: 240px;
+                    max-width: calc(100% - 80px);
                 }
 
-                .summary-switch-caret {
-                    width: 0;
-                    height: 0;
-                    border-left: 4px solid transparent;
-                    border-right: 4px solid transparent;
-                    border-top: 5px solid rgba(255, 255, 255, 0.95);
+                .top-switch-btn {
+                    flex: 1;
+                    border: none;
+                    border-radius: 10px;
+                    height: 36px;
+                    padding: 0 10px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    line-height: 1;
+                    color: rgba(255, 255, 255, 0.92);
+                    background: transparent;
+                    cursor: pointer;
+                }
+
+                .top-switch-btn.active {
+                    background: #fff;
+                    color: #2856e3;
+                    box-shadow: 0 1px 3px rgba(10, 33, 97, 0.25);
                 }
 
                 .review-back {
@@ -578,10 +583,10 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
 
             <header class="review-topbar">
                 <button class="review-back" id="reviewBack" aria-label="返回首页">‹</button>
-                <div class="title-wrap">
-                    <div class="title">复盘日报</div>
+                <div class="top-switch" aria-label="页面切换">
+                    <button class="top-switch-btn" id="switchTodayBtn" type="button">今日明细</button>
+                    <button class="top-switch-btn active" id="switchYesterdaySummaryBtn" type="button">昨日汇总</button>
                 </div>
-                <button class="summary-switch-btn" type="button" id="switchTodayBtn">昨日<span class="summary-switch-caret"></span></button>
             </header>
 
             <section class="review-banner">
@@ -737,16 +742,18 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
     const backBtn = document.getElementById('reviewBack');
     const rankDetail = document.getElementById('rankDetail');
     const switchTodayBtn = document.getElementById('switchTodayBtn');
+    const switchYesterdaySummaryBtn = document.getElementById('switchYesterdaySummaryBtn');
     const summaryDetailLinks = Array.from(container.querySelectorAll('[data-detail-main]'));
 
     const jumpToYesterdayDetail = (mainId, subId = null) => {
         if (typeof navigateTo === 'function') {
             navigateTo('reviewDaily', {
                 day: 'yesterday',
-                    switchLabel: '昨日',
                 switchTarget: 'reviewDaily',
                 hideMustSign: true,
-                    backTarget: 'reviewDailyYd',
+                backTarget: 'reviewDailyYd',
+                pageTitle: '昨日明细',
+                showHeaderSwitch: false,
                 initialLargeMetricId: mainId,
                 initialSubMetricId: subId || null
             });
@@ -769,7 +776,17 @@ export async function render(containerId, { navigateTo, showToast } = {}) {
     if (switchTodayBtn) {
         switchTodayBtn.addEventListener('click', () => {
             if (typeof navigateTo === 'function') {
-                navigateTo('reviewDaily');
+                navigateTo('reviewDaily', {
+                    day: 'today'
+                });
+            }
+        });
+    }
+
+    if (switchYesterdaySummaryBtn) {
+        switchYesterdaySummaryBtn.addEventListener('click', () => {
+            if (typeof navigateTo === 'function') {
+                navigateTo('reviewDailyYd');
             }
         });
     }

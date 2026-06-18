@@ -1,8 +1,11 @@
+import { createMustSignTabData as createMustSignSummaryData } from './mustSign/tabs/data.js';
+
 export async function render(containerId, { showToast, navigateTo }) {
     // 子模块注册表（路径相对于本文件）
     const subModules = {
         reviewDaily:  { file: './dailyReview/index.js',     hideNav: false },
         reviewDailyYd:{ file: './dailyReview/yesterday.js', hideNav: false },
+        signedReport:  { file: './signedReport/index.js',    hideNav: false },
     };
 
     // 子路由分发：已知子页面在内部处理，其余转发给 index.html
@@ -36,6 +39,31 @@ export async function render(containerId, { showToast, navigateTo }) {
     };
 
     const container = document.getElementById(containerId);
+
+    const mustSignSummary = createMustSignSummaryData();
+    const mustSignCount = (mustSignSummary.tabMeta || [])
+        .filter((item) => item.id === 'zcw' || item.id === 'dispatch')
+        .reduce((total, item) => total + Number(item.count || 0), 0);
+    const reviewDailyMetricsToday = [
+        { label: '揽收超时', count: 8, mainId: 'scatter', subId: 'timeout' },
+        { label: '未取件', count: 5, mainId: 'scatter', subId: 'notPicked' },
+        { label: '虚假签收', count: 12, mainId: 'quality', subId: 'fakeSign' },
+        { label: '遗失', count: 3, mainId: 'quality', subId: 'lost' },
+        { label: '破损', count: 4, mainId: 'quality', subId: 'broken' },
+        { label: '今日必签', count: 6, mainId: 'mustSign', subId: 'mustSign' },
+        { label: '未电联', count: 6, mainId: 'scatter', subId: 'noCall' },
+        { label: '未上门', count: 7, mainId: 'scatter', subId: 'noDoor' }
+    ];
+    const reviewDailyMetricsYesterday = [
+        { label: '揽收超时', count: 86, mainId: 'scatter', subId: 'timeout' },
+        { label: '未取件', count: 67, mainId: 'scatter', subId: 'notPicked' },
+        { label: '虚假签收', count: 10, mainId: 'quality', subId: 'fakeSign' },
+        { label: '遗失', count: 36, mainId: 'quality', subId: 'lost' },
+        { label: '破损', count: 28, mainId: 'quality', subId: 'broken' },
+        { label: '6日未出库', count: 30, mainId: 'mustSign', subId: null },
+        { label: '未电联', count: 10, mainId: 'scatter', subId: 'noCall' },
+        { label: '未上门', count: 12, mainId: 'scatter', subId: 'noDoor' }
+    ];
 
     container.innerHTML = `
         <section class="home-ref">
@@ -300,19 +328,6 @@ export async function render(containerId, { showToast, navigateTo }) {
                 }
                 .dot.active { width: 16px; background: #2d7bf2; }
 
-                .brief {
-                    margin-top: 10px;
-                    background: #ececec;
-                    border-radius: 10px;
-                    height: 42px;
-                    padding: 0 14px;
-                    display: flex;
-                    align-items: center;
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #8a8a8a;
-                }
-
                 .metrics {
                     margin-top: 10px;
                     background: #ededed;
@@ -365,6 +380,91 @@ export async function render(containerId, { showToast, navigateTo }) {
                     border-radius: 50%;
                     background: #ff4d4f;
                     flex-shrink: 0;
+                }
+
+                .review-daily-module {
+                    margin-top: 10px;
+                    background: #fff;
+                    border-radius: 14px;
+                    padding: 12px;
+                    box-shadow: 0 1px 4px rgba(25, 38, 69, 0.06);
+                }
+
+                .review-daily-head {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 10px;
+                    margin-bottom: 10px;
+                }
+
+                .review-daily-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #2f2f2f;
+                }
+
+                .review-daily-date {
+                    display: inline-flex;
+                    border-radius: 999px;
+                    overflow: hidden;
+                    border: 1px solid #dfe6f0;
+                    background: #f6f8fc;
+                }
+
+                .review-daily-date span {
+                    padding: 5px 10px;
+                    font-size: 12px;
+                    color: #738099;
+                    line-height: 1;
+                    cursor: pointer;
+                }
+
+                .review-daily-date .active {
+                    background: #2d7bf2;
+                    color: #fff;
+                }
+
+                .review-daily-grid {
+                    display: grid;
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                    gap: 8px;
+                }
+
+                .review-daily-item {
+                    border: 1px solid #e4ebf4;
+                    border-radius: 12px;
+                    background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%);
+                    padding: 10px 6px 9px;
+                    text-align: center;
+                    color: #4a566b;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 4px;
+                    min-height: 68px;
+                    border-radius: 12px;
+                }
+
+                .review-daily-item:active {
+                    transform: scale(0.99);
+                }
+
+                .review-daily-count {
+                    font-size: 20px;
+                    line-height: 1;
+                    font-weight: 700;
+                    color: #2d7bf2;
+                }
+
+                .review-daily-label {
+                    font-size: 12px;
+                    line-height: 1.2;
+                    white-space: nowrap;
                 }
 
                 .banner {
@@ -427,6 +527,74 @@ export async function render(containerId, { showToast, navigateTo }) {
                     cursor: pointer;
                 }
 
+                .review-preview-modal {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.12);
+                    z-index: 20;
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 24px;
+                }
+
+                .review-preview-shell {
+                    width: 75%;
+                    height: 70%;
+                    min-width: 240px;
+                    min-height: 360px;
+                    max-width: 328px;
+                    max-height: 675px;
+                    border-radius: 16px;
+                    background: #fff;
+                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26);
+                    position: relative;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .review-preview-close {
+                    width: 40px;
+                    height: 40px;
+                    border: 2px solid #d8e0ed;
+                    border-radius: 50%;
+                    background: #fff;
+                    color: #1e2a3a;
+                    font-size: 26px;
+                    line-height: 1;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                }
+
+                .review-preview-close-wrap {
+                    position: absolute;
+                    left: 50%;
+                    bottom: 24px;
+                    transform: translateX(-50%);
+                }
+
+                .review-preview-viewport {
+                    width: 100%;
+                    height: 100%;
+                    overflow: auto;
+                    background: #f4f5f8;
+                }
+
+                .review-preview-stage {
+                    width: calc(100% / 0.7);
+                    min-height: calc(100% / 0.7);
+                    transform: scale(0.7);
+                    transform-origin: top left;
+                }
+
+                .review-preview-content {
+                    min-height: 100%;
+                }
+
                 @keyframes ticker {
                     from { transform: translateX(0); }
                     to { transform: translateX(-130%); }
@@ -461,10 +629,10 @@ export async function render(containerId, { showToast, navigateTo }) {
             <div class="content-wrap">
                 <section class="stats">
                     <div class="stats-grid">
-                        <div id="mustSignStat" role="button" tabindex="0"><div class="stats-num">34</div><div class="stats-label">待签收</div></div>
+                        <div id="mustSignStat" role="button" tabindex="0"><div class="stats-num">${mustSignCount}</div><div class="stats-label">待签收</div></div>
                         <div><div class="stats-num">0</div><div class="stats-label">派件跟踪</div></div>
                         <div><div class="stats-num">0</div><div class="stats-label">问题件</div></div>
-                        <div><div class="stats-num">0</div><div class="stats-label">已签收</div></div>
+                            <div id="signedStat" role="button" tabindex="0"><div class="stats-num">23</div><div class="stats-label">汇总数据</div></div>
                     </div>
                     <div class="stats-grid">
                         <div><div class="stats-num">1</div><div class="stats-label">待揽收</div></div>
@@ -504,8 +672,6 @@ export async function render(containerId, { showToast, navigateTo }) {
                     <div class="dots" id="toolDots"><span class="dot active"></span><span class="dot"></span></div>
                 </section>
 
-                <div class="brief">🔊 读懂【复盘日报】，工作更高效</div>
-
                 <section class="metrics">
                     <div class="metric-row">
                         <div class="metric"><div class="metric-num">0</div><div class="metric-name">派前电联</div></div>
@@ -518,10 +684,27 @@ export async function render(containerId, { showToast, navigateTo }) {
 
                 <section class="cards">
                     <div class="card"><div class="card-left">🗓 待办</div><div>›</div></div>
-                    <div class="card" id="reviewDailyCard" role="button" tabindex="0"><div class="card-left">🧾 复盘日报<span class="card-unread-dot" aria-hidden="true"></span></div><div>›</div></div>
                     <div class="card"><div class="card-left">🎓 学院</div><div>›</div></div>
                     <div class="card"><div class="card-left">✅ 质检</div><div>›</div></div>
                     <div class="card"><div class="card-left">⏰ 提醒</div><div>›</div></div>
+                </section>
+
+                <section class="review-daily-module" id="reviewDailyModule">
+                    <div class="review-daily-head">
+                        <div class="review-daily-title">复盘日报</div>
+                        <div class="review-daily-date">
+                            <span id="reviewDailyYesterdayTab">昨日</span>
+                            <span id="reviewDailyTodayTab" class="active">今日</span>
+                        </div>
+                    </div>
+                    <div class="review-daily-grid" id="reviewDailyGrid">
+                        ${reviewDailyMetricsToday.map((item) => `
+                            <button class="review-daily-item" type="button" data-review-main="${item.mainId}" data-review-sub="${item.subId}">
+                                <span class="review-daily-count">${item.count}</span>
+                                <span class="review-daily-label">${item.label}</span>
+                            </button>
+                        `).join('')}
+                    </div>
                 </section>
 
                 <section class="banner">
@@ -542,6 +725,19 @@ export async function render(containerId, { showToast, navigateTo }) {
                     <button class="close-btn" id="closeQrBtn">关闭</button>
                 </div>
             </div>
+
+            <div class="review-preview-modal" id="reviewPreviewModal" aria-label="复盘日报预览">
+                <div class="review-preview-shell" id="reviewPreviewShell">
+                    <div class="review-preview-viewport" id="reviewPreviewViewport">
+                        <div class="review-preview-stage">
+                            <div class="review-preview-content" id="reviewPreviewContent"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="review-preview-close-wrap">
+                    <button class="review-preview-close" id="reviewPreviewClose" aria-label="关闭预览">×</button>
+                </div>
+            </div>
         </section>
     `;
 
@@ -553,8 +749,42 @@ export async function render(containerId, { showToast, navigateTo }) {
     const msgList = document.getElementById('msgList');
     const toolScroll = document.getElementById('toolScroll');
     const toolDots = document.getElementById('toolDots');
-    const reviewDailyCard = document.getElementById('reviewDailyCard');
+    const reviewDailyModule = document.getElementById('reviewDailyModule');
+    const reviewDailyGrid = document.getElementById('reviewDailyGrid');
+    const reviewDailyYesterdayTab = document.getElementById('reviewDailyYesterdayTab');
+    const reviewDailyTodayTab = document.getElementById('reviewDailyTodayTab');
     const mustSignStat = document.getElementById('mustSignStat');
+    const signedStat = document.getElementById('signedStat');
+    const reviewPreviewModal = document.getElementById('reviewPreviewModal');
+    const reviewPreviewShell = document.getElementById('reviewPreviewShell');
+    const reviewPreviewClose = document.getElementById('reviewPreviewClose');
+    const reviewPreviewContent = document.getElementById('reviewPreviewContent');
+
+    let activeReviewDay = 'today';
+
+    const jumpToReviewDaily = (mainId, subId = null, day = activeReviewDay) => {
+        if (typeof localNavigateTo === 'function') {
+            if (day === 'yesterday') {
+                localNavigateTo('reviewDaily', {
+                    day: 'yesterday',
+                    switchLabel: '昨日',
+                    switchTarget: 'reviewDaily',
+                    hideMustSign: true,
+                    backTarget: 'home',
+                    initialLargeMetricId: mainId,
+                    initialSubMetricId: subId || null
+                });
+            } else {
+                localNavigateTo('reviewDaily', {
+                    initialLargeMetricId: mainId,
+                    initialSubMetricId: subId || null
+                });
+            }
+            return;
+        }
+
+        showToast('复盘日报');
+    };
 
     if (improveBtn) {
         improveBtn.addEventListener('click', () => showToast('改进建议入口'));
@@ -595,22 +825,58 @@ export async function render(containerId, { showToast, navigateTo }) {
         });
     }
 
-    if (reviewDailyCard) {
-        const jumpToReviewDaily = () => {
-            if (typeof localNavigateTo === 'function') {
-                localNavigateTo('reviewDaily');
-            } else {
-                showToast('复盘日报');
-            }
-        };
+    const renderReviewDailyGrid = () => {
+        if (!reviewDailyGrid) return;
+        const metrics = activeReviewDay === 'yesterday' ? reviewDailyMetricsYesterday : reviewDailyMetricsToday;
+        reviewDailyGrid.innerHTML = metrics.map((item) => `
+            <button class="review-daily-item" type="button" data-review-main="${item.mainId}" data-review-sub="${item.subId || ''}">
+                <span class="review-daily-count">${item.count}</span>
+                <span class="review-daily-label">${item.label}</span>
+            </button>
+        `).join('');
 
-        reviewDailyCard.addEventListener('click', jumpToReviewDaily);
-        reviewDailyCard.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                jumpToReviewDaily();
-            }
+        Array.from(reviewDailyGrid.querySelectorAll('[data-review-main]')).forEach((item) => {
+            item.addEventListener('click', () => {
+                const mainId = item.getAttribute('data-review-main');
+                const subId = item.getAttribute('data-review-sub') || null;
+                jumpToReviewDaily(mainId, subId, activeReviewDay);
+            });
+
+            item.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    const mainId = item.getAttribute('data-review-main');
+                    const subId = item.getAttribute('data-review-sub') || null;
+                    jumpToReviewDaily(mainId, subId, activeReviewDay);
+                }
+            });
         });
+    };
+
+    const updateReviewDayTabs = () => {
+        if (reviewDailyYesterdayTab) reviewDailyYesterdayTab.classList.toggle('active', activeReviewDay === 'yesterday');
+        if (reviewDailyTodayTab) reviewDailyTodayTab.classList.toggle('active', activeReviewDay === 'today');
+    };
+
+    if (reviewDailyModule) {
+        if (reviewDailyYesterdayTab) {
+            reviewDailyYesterdayTab.addEventListener('click', () => {
+                activeReviewDay = 'yesterday';
+                updateReviewDayTabs();
+                renderReviewDailyGrid();
+            });
+        }
+
+        if (reviewDailyTodayTab) {
+            reviewDailyTodayTab.addEventListener('click', () => {
+                activeReviewDay = 'today';
+                updateReviewDayTabs();
+                renderReviewDailyGrid();
+            });
+        }
+
+        updateReviewDayTabs();
+        renderReviewDailyGrid();
     }
 
     if (mustSignStat) {
@@ -630,4 +896,77 @@ export async function render(containerId, { showToast, navigateTo }) {
             }
         });
     }
+
+    if (signedStat) {
+        const jumpToSignedReport = () => {
+            if (typeof localNavigateTo === 'function') {
+                localNavigateTo('signedReport', {
+                    view: 'summary',
+                    selectedDateKey: '2026-06-03',
+                    courierId: 'all'
+                });
+            } else {
+                showToast('已签收汇总');
+                            showToast('汇总数据');
+            }
+        };
+
+        signedStat.addEventListener('click', jumpToSignedReport);
+        signedStat.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                jumpToSignedReport();
+            }
+        });
+    }
+
+    const closeReviewPreview = () => {
+        if (reviewPreviewModal) reviewPreviewModal.style.display = 'none';
+    };
+
+    const openReviewDailyFullScreen = () => {
+        closeReviewPreview();
+        localNavigateTo('reviewDailyYd');
+    };
+
+    const mountReviewPreview = async () => {
+        if (!reviewPreviewModal || !reviewPreviewContent) return;
+
+        reviewPreviewModal.style.display = 'flex';
+
+        try {
+            const url = new URL(`./dailyReview/yesterday.js?t=${Date.now()}`, import.meta.url);
+            const mod = await import(url.href);
+            if (mod.render) {
+                await mod.render('reviewPreviewContent', {
+                    navigateTo: localNavigateTo,
+                    showToast,
+                    routeParams: {
+                        fromHomePreview: true
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('昨日复盘日报预览加载失败:', error);
+            reviewPreviewContent.innerHTML = '<div style="padding:24px;color:#666;">昨日复盘日报预览加载失败</div>';
+        }
+
+        if (reviewPreviewClose) {
+            reviewPreviewClose.addEventListener('click', (event) => {
+                event.stopPropagation();
+                closeReviewPreview();
+            });
+        }
+
+        if (reviewPreviewShell) {
+            reviewPreviewShell.addEventListener('click', (event) => {
+                if (event.target === reviewPreviewClose || event.target.closest('#reviewPreviewClose')) {
+                    return;
+                }
+                openReviewDailyFullScreen();
+            });
+        }
+    };
+
+    await mountReviewPreview();
 }

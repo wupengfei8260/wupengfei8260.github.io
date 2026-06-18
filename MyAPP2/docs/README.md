@@ -15,6 +15,7 @@
 - `docs/home/代码对齐版-前端需求文档.md`
 - `docs/home/评审版-前端需求文档.md`
 - `docs/home/接口化改造版-前端需求文档.md`
+- `docs/home/汇总数据-PRD.md`
 - `docs/mustSign/电话勿扰上报原因-PRD.md`
 
 ## 新增文档建议

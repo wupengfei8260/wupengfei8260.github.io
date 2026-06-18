@@ -5,7 +5,10 @@
   "description": "MyAPP2 local preview",
   "scripts": {
     "dev": "live-server . --host=127.0.0.1 --port=5500 --open=index.html --no-browser",
-    "dev:open": "live-server . --host=127.0.0.1 --port=5500 --open=index.html"
+    "dev:open": "live-server . --host=127.0.0.1 --port=5500 --open=index.html",
+    "docs:sync": "bash scripts/docs_sync_apply.sh --staged",
+    "precommit:docs": "bash scripts/pre_commit_docs_sync.sh",
+    "hooks:install": "bash scripts/install_git_hooks.sh"
   },
   "devDependencies": {
     "live-server": "^1.2.2"

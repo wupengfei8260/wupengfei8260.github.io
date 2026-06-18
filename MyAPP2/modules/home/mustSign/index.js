@@ -1,91 +1,12 @@
+import { createMustSignTabData as createSharedMustSignTabData } from './tabs/data.js';
+
 export async function render(containerId, { navigateTo, showToast, routeParams = {} } = {}) {
     const container = document.getElementById(containerId);
     if (!container) return;
     const apiBridge = routeParams.callReportApi || window.__MUST_SIGN_API__ || {};
 
     function createMustSignTabData() {
-        const tabMeta = [
-            { id: 'zcw', label: '智橙网', count: 20 },
-            { id: 'dispatch', label: '待派件', count: 14 },
-            { id: 'signed', label: '已签收', count: 23 },
-            { id: 'abnormal', label: '异常签收', count: 3 },
-            { id: 'third', label: '第三方', count: 9 }
-        ];
-
-        const listData = {
-            zcw: [
-                {
-                    id: 'zcw-1',
-                    contactStatus: '已电联客户 家门口',
-                    deadline: '今日 11:20:44 前签收',
-                    trackingNo: '432343074439649',
-                    platform: 'tb',
-                    time: '16:14',
-                    nameMasked: '姜荣',
-                    nameFull: '姜荣',
-                    phoneMasked: '152****1086',
-                    phoneFull: '15245641086',
-                    callTag: '派前电联',
-                    address: '上海市浦东新区邹平路191号',
-                    tags: [
-                        { text: '韵达智橙网', tone: 'danger' },
-                        { text: '送货上门', tone: 'warn' },
-                        { text: '多多专送', tone: 'plain' }
-                    ]
-                },
-                {
-                    id: 'zcw-2',
-                    contactStatus: '已电联客户 家门口',
-                    deadline: '今天12点前签收',
-                    warning: '分签预警',
-                    trackingNo: '432343074439649',
-                    platform: 'tb',
-                    time: '16:14',
-                    nameMasked: '孙菲芸',
-                    nameFull: '孙菲芸',
-                    phoneMasked: '152****1086',
-                    phoneFull: '15245641086',
-                    callTag: '电话勿扰',
-                    address: '上海市静安区江场三路272、278号市北高新技术服务园区17幢',
-                    tags: [
-                        { text: '韵达智橙网', tone: 'danger' },
-                        { text: '送货上门', tone: 'warn' },
-                        { text: '多多专送', tone: 'plain' }
-                    ]
-                }
-            ],
-            dispatch: [
-                {
-                    id: 'dispatch-1',
-                    contactStatus: '已电联客户 放门口',
-                    deadline: '今日 13:40:12 前签收',
-                    trackingNo: '881239047561204',
-                    platform: 'jd',
-                    time: '15:22',
-                    nameMasked: '吴先生',
-                    nameFull: '吴先生',
-                    phoneMasked: '138****2201',
-                    phoneFull: '13876542201',
-                    callTag: '派前电联',
-                    address: '上海市普陀区真南路150号',
-                    tags: [
-                        { text: '普通件', tone: 'plain' },
-                        { text: '送货上门', tone: 'warn' }
-                    ]
-                }
-            ],
-            signed: [],
-            abnormal: [],
-            third: []
-        };
-
-        tabMeta.forEach((tab) => {
-            if (Array.isArray(listData[tab.id])) {
-                tab.count = listData[tab.id].length;
-            }
-        });
-
-        return { tabMeta, listData };
+        return createSharedMustSignTabData();
     }
 
     function createFallbackTabModule(tabId, profile = {}) {
@@ -468,6 +389,8 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
                     flex: 1;
                     min-height: 0;
                     overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
+                    overscroll-behavior-y: contain;
                     padding: 8px 4px 90px;
                     position: relative;
                 }
@@ -1873,11 +1796,18 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
         }
     }
 
-    async function nightDialPrompt(item, continueAction, tabId = activeTab) {
-        if (tabId !== 'zcw' || !hasMultiSendTag(item)) return false;
+    function isNightDialTime(date = new Date()) {
+        const minutes = date.getHours() * 60 + date.getMinutes();
+        const startMinutes = 20 * 60;
+        const endMinutes = 8 * 60 + 30;
+        return minutes >= startMinutes || minutes <= endMinutes;
+    }
 
-        openNightDialModal(item, tabId, continueAction, 'demo');
-        return true;
+    async function nightDialPrompt(item, continueAction, tabId = activeTab) {
+        if (typeof pageToast === 'function') {
+            pageToast('晚20:00 - 早 08:30 休息时段请谨慎外呼', 3000);
+        }
+        return false;
     }
 
     function pageToast(message, duration = 3000) {
@@ -2277,7 +2207,7 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
         cancelBtn: callReportCancel,
         confirmBtn: callReportConfirm,
         getCurrentItemById,
-        nightDialPrompt: (item, continueAction) => nightDialPrompt(item, continueAction, 'zcw')
+        nightDialPrompt: (item, continueAction) => nightDialPrompt(item, continueAction, activeTab)
     });
 
     function platformLabel(platform) {

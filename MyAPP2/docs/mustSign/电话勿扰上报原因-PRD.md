@@ -283,3 +283,19 @@
 
 - 本文只覆盖【电话勿扰电话按钮】相关上报交互，不扩展其它按钮行为。
 - 若后续智橙网系统接口字段发生变化，应以接口字典为准同步更新前端。
+
+
+<!-- AUTO_SYNC_START -->
+## 自动维护区块
+- 最近同步时间：2026-06-18 16:27:29 +0800
+- 触发范围：mustSign
+- 本次触发文件：
+- modules/home/mustSign/index.js
+- modules/home/mustSign/tabs/abnormal/index.js
+- modules/home/mustSign/tabs/data.js
+- modules/home/mustSign/tabs/dispatch/index.js
+- modules/home/mustSign/tabs/signed/index.js
+- modules/home/mustSign/tabs/third/index.js
+- modules/home/mustSign/tabs/zcw/index.js
+- 规则：仅自动维护该区块，人工撰写内容不覆盖。
+<!-- AUTO_SYNC_END -->

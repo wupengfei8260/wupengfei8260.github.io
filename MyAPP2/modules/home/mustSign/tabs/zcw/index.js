@@ -333,8 +333,6 @@ export function createTabFeatureController({
                     apiBridge.onDial(item);
                 } else if (typeof routeParams.onDial === 'function') {
                     routeParams.onDial(item);
-                } else {
-                    pageToast(`${item.nameMasked} 电话拨号`, 3000);
                 }
             });
             if (guarded) return;
@@ -349,8 +347,6 @@ export function createTabFeatureController({
             apiBridge.onDial(item);
         } else if (typeof routeParams.onDial === 'function') {
             routeParams.onDial(item);
-        } else {
-            pageToast(`${item.nameMasked} 电话拨号`, 3000);
         }
     }
 

@@ -4,9 +4,9 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
 
     const isTodaySelected = routeParams.day !== 'yesterday';
     const hideMustSign = Boolean(routeParams.hideMustSign);
-    const switchLabel = routeParams.switchLabel || (isTodaySelected ? '今日' : '昨日');
-    const switchTarget = routeParams.switchTarget || (isTodaySelected ? 'reviewDailyYd' : 'reviewDaily');
-    const switchTargetParams = routeParams.switchTargetParams || {};
+    const isYesterdaySelected = !isTodaySelected;
+    const pageTitle = routeParams.pageTitle || (isYesterdaySelected ? '昨日明细' : '');
+    const showHeaderSwitch = routeParams.showHeaderSwitch !== false;
     const backTarget = routeParams.backTarget || 'home';
     const backTargetParams = routeParams.backTargetParams || {};
     const initialLargeMetricId = routeParams.initialLargeMetricId || 'scatter';
@@ -63,17 +63,20 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
                     display: flex;
                     flex-direction: column;
                     overflow: hidden;
-                    padding: 0 12px 24px;
+                    padding: 0;
                     -webkit-overflow-scrolling: touch;
                 }
 
                 .top-fixed-shell {
                     background: #fff;
                     padding: 12px 12px 10px;
-                    margin: 0 -12px 10px;
-                    position: relative;
+                    margin: 0;
+                    position: sticky;
+                    top: 0;
                     overflow: hidden;
                     flex-shrink: 0;
+                    z-index: 100;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
                 }
 
                 .top-fixed-shell::after {
@@ -86,7 +89,7 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
                     align-items: center;
                     padding: 10px 34px 13px;
                     min-height: 60px;
-                    margin-bottom: 10px;
+                    margin-bottom: 8px;
                     position: relative;
                     background: transparent;
                     z-index: 1;
@@ -111,66 +114,50 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
                     cursor: pointer;
                 }
 
-                .title {
-                    font-size: 21px;
-                    font-weight: 400;
-                    color: #1e2a3a;
-                    letter-spacing: -0.2px;
-                    line-height: 1.25;
-                }
-
-                .title-wrap {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 3px;
-                    align-items: center;
-                    text-align: center;
-                }
-
-                .title-sub {
-                    font-size: 12px;
-                    color: #7f8ca3;
-                    line-height: 1.45;
-                }
-
-                .date-switch {
-                    position: absolute;
-                    right: 0;
-                    top: 50%;
-                    transform: translateY(-50%);
+                .header-switch {
+                    margin: 0 auto;
                     display: inline-flex;
                     align-items: center;
                     gap: 4px;
-                    border: 1px solid #d8e0ed;
-                    background: #f3f6fb;
-                    color: #6f7c8f;
-                    border-radius: 999px;
-                    padding: 6px 10px;
-                    cursor: pointer;
-                    z-index: 1;
+                    padding: 4px;
+                    height: 44px;
+                    border-radius: 14px;
+                    border: 1px solid #c8d2e3;
+                    background: #e9eef7;
+                    min-width: 240px;
+                    max-width: calc(100% - 80px);
                 }
 
-                .date-today {
-                    font-size: 13px;
+                .header-switch-btn {
+                    flex: 1;
+                    border: none;
+                    border-radius: 10px;
+                    height: 36px;
+                    padding: 0 10px;
+                    font-size: 14px;
                     font-weight: 600;
-                    color: inherit;
-                    background: transparent;
-                    padding: 0;
-                    border-radius: 0;
                     line-height: 1;
+                    color: #4c5f7c;
+                    background: transparent;
+                    cursor: pointer;
                 }
 
-                .date-caret {
-                    width: 0;
-                    height: 0;
-                    border-left: 4px solid transparent;
-                    border-right: 4px solid transparent;
-                    border-top: 5px solid #7b889f;
-                    transition: transform 0.2s ease;
+                .header-switch-btn.active {
+                    background: #fff;
+                    color: #1f3f8b;
+                    box-shadow: 0 1px 3px rgba(30, 53, 102, 0.18);
                 }
 
-                .date-switch.is-yesterday .date-caret {
-                    transform: rotate(180deg);
+                .header-title-alone {
+                    margin: 0 auto;
+                    height: 44px;
+                    color: #1e2a3a;
+                    font-size: 18px;
+                    font-weight: 500;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    line-height: 1;
                 }
 
                 .metric-board {
@@ -189,6 +176,7 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
                     min-height: 0;
                     overflow-y: auto;
                     -webkit-overflow-scrolling: touch;
+                    padding: 0 12px 24px;
                 }
 
                 .main-tabs {
@@ -871,14 +859,14 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
                     <div class="top-fixed-shell">
                         <div class="header">
                             <button class="page-back-btn" id="pageBackBtn" aria-label="返回上一页">&lt;</button>
-                            <div class="title-wrap">
-                                <div class="title">复盘日报</div>
-                                <div class="title-sub">全面分析自我，高效提升突破</div>
+                            ${showHeaderSwitch ? `
+                            <div class="header-switch" aria-label="页面切换">
+                                <button class="header-switch-btn" id="todayDetailBtn" type="button">今日明细</button>
+                                <button class="header-switch-btn" id="yesterdaySummaryBtn" type="button">昨日汇总</button>
                             </div>
-                            <button class="date-switch" id="dateSwitch" type="button" aria-label="切换日期">
-                                <span class="date-today" id="dateDisplay">06/02 17:30</span>
-                                <span class="date-caret"></span>
-                            </button>
+                            ` : `
+                            <div class="header-title-alone">${pageTitle || '昨日明细'}</div>
+                            `}
                         </div>
 
                         <section class="metric-board">
@@ -1138,8 +1126,8 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
             subMetrics: [
                 { id: 'timeout', label: '超时揽收', type: 'addressPhone', dataRef: timeoutPickupData },
                 { id: 'notPicked', label: '未取件', type: 'addressPhone', dataRef: notPickedData },
-                { id: 'noCall', label: '未电联', type: 'callDoorDetail', dataRef: noCallData },
-                { id: 'noDoor', label: '未上门签收', type: 'callDoorDetail', dataRef: noDoorData }
+                { id: 'noCall', label: isTodaySelected ? '待电联' : '未电联', type: 'callDoorDetail', dataRef: noCallData },
+                { id: 'noDoor', label: isTodaySelected ? '待上门' : '未上门签收', type: 'callDoorDetail', dataRef: noDoorData }
             ]
         },
         {
@@ -1167,18 +1155,26 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
     let currentSubMetricId = initialSubMetricId;
     const hiddenTodayMetricIds = new Set(['rank', 'advice', 'overview']);
 
+    if (isYesterdaySelected && currentLargeMetricId === 'sixDays') {
+        currentLargeMetricId = 'mustSign';
+    }
+
     function getVisibleMetrics() {
         return largeMetrics.filter((metric) => {
-            if (metric.id === 'mustSign' && hideMustSign) return false;
+            if (isYesterdaySelected && metric.id === 'sixDays') return false;
+            if (metric.id === 'mustSign' && hideMustSign && !isYesterdaySelected) return false;
             if (isTodaySelected && hiddenTodayMetricIds.has(metric.id)) return false;
             return true;
         });
     }
 
-    function renderDate() {
-        const el = container.querySelector('#dateDisplay');
-        if (!el) return;
-        el.innerText = switchLabel;
+    function renderHeaderSwitch() {
+        const todayBtn = container.querySelector('#todayDetailBtn');
+        const yesterdayBtn = container.querySelector('#yesterdaySummaryBtn');
+        if (!todayBtn || !yesterdayBtn) return;
+
+        todayBtn.classList.toggle('active', isTodaySelected);
+        yesterdayBtn.classList.toggle('active', !isTodaySelected);
     }
 
     function getSubMetricCount(subMetric) {
@@ -1205,10 +1201,16 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
 
     function getMainMetricCount(metric) {
         if (!metric) return null;
+        if (isYesterdaySelected && metric.id === 'mustSign') return sixDaysNoOutData.count;
         if (metric.id === 'mustSign') return mustSignData.count;
         if (metric.id === 'sixDays') return sixDaysNoOutData.count;
         if (metric.subMetrics?.length) return getLargeMetricTotal(metric);
         return null;
+    }
+
+    function getMainMetricLabel(metric) {
+        if (isYesterdaySelected && metric?.id === 'mustSign') return '未出库';
+        return metric?.label || '';
     }
 
     function renderMainTabs() {
@@ -1219,10 +1221,10 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
 
         mainTabs.innerHTML = visibleMetrics.map((metric) => {
             const mainCount = getMainMetricCount(metric);
+            const mainLabel = getMainMetricLabel(metric);
             return `
             <button class="main-tab ${metric.id === currentLargeMetricId ? 'active' : ''}" data-main-id="${metric.id}">
-                <span class="main-tab-text">${metric.label}</span>
-                ${typeof mainCount === 'number' ? `<span class="main-tab-count">${mainCount}</span>` : ''}
+                <span class="main-tab-text">${mainLabel}</span>${typeof mainCount === 'number' ? `<span class="main-tab-count">${mainCount}</span>` : ''}
             </button>
         `;
         }).join('');
@@ -1243,7 +1245,8 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
         const subTabs = container.querySelector('#subTabs');
         if (!subTabs) return;
 
-        const activeLarge = largeMetrics.find((m) => m.id === currentLargeMetricId);
+        const activeLargeId = isYesterdaySelected && currentLargeMetricId === 'mustSign' ? 'sixDays' : currentLargeMetricId;
+        const activeLarge = largeMetrics.find((m) => m.id === activeLargeId);
         if (!activeLarge?.subMetrics?.length) {
             subTabs.style.display = 'none';
             subTabs.innerHTML = '';
@@ -1456,7 +1459,13 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
             });
         } else if (subMetric.type === 'callDoorDetail') {
             details.forEach((item) => {
-                cardsHtml += `<div class="record-card"><div class="field-row"><span class="field-label">单号</span><span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}">${item.trackingNo}</span></span></div><div class="field-row"><span class="field-label">分发时间</span><span class="field-value">${item.dispatchTime}</span></div><div class="field-row"><span class="field-label">签收时间</span><span class="field-value">${item.signTime}</span></div><div class="field-row"><span class="field-label">签收人</span><span class="field-value">${item.signPerson}</span></div><div class="field-row"><span class="field-label">类型</span><span class="field-value">${item.typeTag}</span></div></div>`;
+                if (isTodaySelected) {
+                    // 今日：只显示单号、分发时间、类型
+                    cardsHtml += `<div class="record-card"><div class="field-row"><span class="field-label">单号</span><span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}">${item.trackingNo}</span></span></div><div class="field-row"><span class="field-label">分发时间</span><span class="field-value">${item.dispatchTime}</span></div><div class="field-row"><span class="field-label">类型</span><span class="field-value">${item.typeTag}</span></div></div>`;
+                } else {
+                    // 昨日：显示单号、分发时间、签收时间、签收人、类型
+                    cardsHtml += `<div class="record-card"><div class="field-row"><span class="field-label">单号</span><span class="field-value"><span class="tracking-clickable" data-tracking="${item.trackingNo}">${item.trackingNo}</span></span></div><div class="field-row"><span class="field-label">分发时间</span><span class="field-value">${item.dispatchTime}</span></div><div class="field-row"><span class="field-label">签收时间</span><span class="field-value">${item.signTime}</span></div><div class="field-row"><span class="field-label">签收人</span><span class="field-value">${item.signPerson}</span></div><div class="field-row"><span class="field-label">类型</span><span class="field-value">${item.typeTag}</span></div></div>`;
+                }
             });
         } else {
             const isLost = subMetric.id === 'lost';
@@ -1551,7 +1560,8 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
             currentSubMetricId = visibleMetrics[0]?.subMetrics?.[0]?.id || null;
         }
 
-        const largeMetric = largeMetrics.find((m) => m.id === currentLargeMetricId);
+        const activeLargeId = isYesterdaySelected && currentLargeMetricId === 'mustSign' ? 'sixDays' : currentLargeMetricId;
+        const largeMetric = largeMetrics.find((m) => m.id === activeLargeId);
         if (!largeMetric) return;
 
         let html = '';
@@ -1606,7 +1616,7 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
 
     function init() {
         setAppNavVisible(false);
-        renderDate();
+        renderHeaderSwitch();
         const visibleMetrics = getVisibleMetrics();
         if (!visibleMetrics.some((metric) => metric.id === currentLargeMetricId)) {
             currentLargeMetricId = visibleMetrics[0]?.id || 'scatter';
@@ -1620,9 +1630,16 @@ export async function render(containerId, { navigateTo, showToast, routeParams =
 
         container.querySelector('#closeDetailBtn')?.addEventListener('click', closeTrackDetail);
         container.querySelector('#pageBackBtn')?.addEventListener('click', handlePageBack);
-        container.querySelector('#dateSwitch')?.addEventListener('click', () => {
+        container.querySelector('#todayDetailBtn')?.addEventListener('click', () => {
             if (typeof navigateTo === 'function') {
-                navigateTo(switchTarget, switchTargetParams);
+                navigateTo('reviewDaily', {
+                    day: 'today'
+                });
+            }
+        });
+        container.querySelector('#yesterdaySummaryBtn')?.addEventListener('click', () => {
+            if (typeof navigateTo === 'function') {
+                navigateTo('reviewDailyYd');
             }
         });
 

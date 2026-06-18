@@ -152,6 +152,82 @@ export function createMustSignTabData() {
     const zcwSeedRows = listData.zcw;
     const dispatchNames = ['吴先生', '陆女士', '周先生', '杨女士', '黄先生', '赵女士', '何先生'];
     const dispatchSeedRows = listData.dispatch;
+    const signedNames = ['顾先生', '许女士', '赵先生', '马女士', '沈先生', '胡女士'];
+    const abnormalNames = ['龚女士', '田先生', '邵女士', '蒋先生'];
+    const thirdNames = ['范先生', '黎女士', '韩先生', '魏女士', '宋先生'];
+
+    listData.signed = Array.from({ length: 6 }, (_, index) => {
+        const seed = listData.signed[0];
+        const hour = String(10 + index).padStart(2, '0');
+        const minute = String((15 + index * 4) % 60).padStart(2, '0');
+        const second = String((20 + index * 6) % 60).padStart(2, '0');
+        const phoneTail = String(920 + index).padStart(4, '0');
+
+        return {
+            ...seed,
+            id: `signed-${index + 1}`,
+            deadline: `今日 ${hour}:${minute}:${second} 已签收`,
+            trackingNo: `553108740011${String(246 + index).padStart(3, '0')}`,
+            platform: ['jd', 'tb', 'pdd'][index % 3],
+            time: `${String(10 + index).padStart(2, '0')}:${String((12 + index * 2) % 60).padStart(2, '0')}`,
+            nameMasked: signedNames[index],
+            nameFull: signedNames[index],
+            phoneMasked: `136****${phoneTail}`,
+            phoneFull: `1367809${phoneTail}`,
+            callTag: '已完成',
+            address: index % 2 === 0 ? '上海市长宁区金钟路658号' : '上海市徐汇区漕溪北路88号',
+            tags: seed.tags.map((tag) => ({ ...tag }))
+        };
+    });
+
+    listData.abnormal = Array.from({ length: 4 }, (_, index) => {
+        const seed = listData.abnormal[0];
+        const hour = String(9 + index).padStart(2, '0');
+        const minute = String((52 + index * 5) % 60).padStart(2, '0');
+        const second = String((9 + index * 7) % 60).padStart(2, '0');
+        const phoneTail = String(2010 + index).padStart(4, '0');
+
+        return {
+            ...seed,
+            id: `abnormal-${index + 1}`,
+            deadline: `今日 ${hour}:${minute}:${second} 已签收`,
+            trackingNo: `210998117654${String(233 + index).padStart(3, '0')}`,
+            platform: ['tb', 'jd', 'pdd'][index % 3],
+            time: `${String(9 + index).padStart(2, '0')}:${String((50 + index * 3) % 60).padStart(2, '0')}`,
+            nameMasked: abnormalNames[index],
+            nameFull: abnormalNames[index],
+            phoneMasked: `151****${phoneTail}`,
+            phoneFull: `1513421${phoneTail}`,
+            callTag: index % 2 === 0 ? '待复核' : '待回访',
+            address: index % 2 === 0 ? '上海市宝山区沪太路4788弄' : '上海市闵行区沪闵路6088号',
+            tags: seed.tags.map((tag) => ({ ...tag }))
+        };
+    });
+
+    listData.third = Array.from({ length: 5 }, (_, index) => {
+        const seed = listData.third[0];
+        const hour = String(12 + index).padStart(2, '0');
+        const minute = String((42 + index * 6) % 60).padStart(2, '0');
+        const phoneTail = String(5521 + index).padStart(4, '0');
+
+        return {
+            ...seed,
+            id: `third-${index + 1}`,
+            deadline: `今日 ${String(17 + index).padStart(2, '0')}:10:00 前签收`,
+            trackingNo: `33210087456222${index + 1}`,
+            platform: ['pdd', 'tb', 'jd'][index % 3],
+            time: `${hour}:${minute}`,
+            nameMasked: thirdNames[index],
+            nameFull: thirdNames[index],
+            phoneMasked: `150****${phoneTail}`,
+            phoneFull: `1507843${phoneTail}`,
+            callTag: index % 2 === 0 ? '派前电联' : '待联系',
+            address: index % 2 === 0 ? '上海市嘉定区安亭镇墨玉路188号' : '上海市浦东新区康桥路888号',
+            tags: index % 2 === 0
+                ? [{ text: '第三方', tone: 'plain' }, { text: '同城急送', tone: 'warn' }]
+                : [{ text: '第三方', tone: 'plain' }, { text: '优先配送', tone: 'warn' }]
+        };
+    });
 
     listData.zcw = Array.from({ length: 20 }, (_, index) => {
         const seed = zcwSeedRows[index % zcwSeedRows.length];
@@ -190,6 +266,25 @@ export function createMustSignTabData() {
                 ]
                 : seed.tags.map((tag) => ({ ...tag }))
         };
+    });
+
+    listData.zcw.push({
+        id: 'zcw-21',
+        contactStatus: '已电联客户 放门口',
+        deadline: '今日 19:18:33 前签收',
+        trackingNo: '432343074440021',
+        platform: 'tb',
+        time: '18:26',
+        nameMasked: '许娜',
+        nameFull: '许娜',
+        phoneMasked: '152****1120',
+        phoneFull: '15245641120',
+        callTag: '电话勿扰',
+        address: '上海市浦东新区金科路1111号',
+        tags: [
+            { text: '韵达智橙网', tone: 'danger' },
+            { text: '送货上门', tone: 'warn' }
+        ]
     });
 
     listData.dispatch = Array.from({ length: 14 }, (_, index) => {

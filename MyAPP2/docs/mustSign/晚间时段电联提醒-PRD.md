@@ -109,3 +109,19 @@
 | 3    | 测试验收 | 按 20:00-08:30 时段验证弹框触发与非触发场景。 |                 |          |          |      |
 
 ## 6、需求单
+
+
+<!-- AUTO_SYNC_START -->
+## 自动维护区块
+- 最近同步时间：2026-06-18 16:27:29 +0800
+- 触发范围：mustSign
+- 本次触发文件：
+- modules/home/mustSign/index.js
+- modules/home/mustSign/tabs/abnormal/index.js
+- modules/home/mustSign/tabs/data.js
+- modules/home/mustSign/tabs/dispatch/index.js
+- modules/home/mustSign/tabs/signed/index.js
+- modules/home/mustSign/tabs/third/index.js
+- modules/home/mustSign/tabs/zcw/index.js
+- 规则：仅自动维护该区块，人工撰写内容不覆盖。
+<!-- AUTO_SYNC_END -->
